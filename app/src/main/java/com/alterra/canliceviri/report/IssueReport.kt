@@ -40,43 +40,43 @@ object IssueReport {
         val audio = if (attachAudio) engine.recentSegmentFiles() else emptyList()
 
         val text = buildString {
-            appendLine("Canlı Çeviri · Sorun bildirimi · sürüm ${BuildConfig.VERSION_NAME}")
+            appendLine("Живой перевод · Сообщение о проблеме · версия ${BuildConfig.VERSION_NAME}")
             appendLine(SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US).format(Date()))
             appendLine(DeviceInfo.summary(context))
-            DeviceInfo.lastExit(context)?.let { appendLine("Önceki kapanış: $it") }
+            DeviceInfo.lastExit(context)?.let { appendLine("Предыдущее завершение: $it") }
             appendLine()
-            appendLine("NE OLDU")
-            appendLine(userNote.ifBlank { "(yazılmadı)" })
+            appendLine("ЧТО ПРОИЗОШЛО")
+            appendLine(userNote.ifBlank { "(не указано)" })
             appendLine()
-            appendLine("AYARLAR")
-            appendLine("Mod: ${settings.mode} · konuşma biçimi: ${if (settings.manualInput) "düğmeyle" else "otomatik"} · " +
+            appendLine("НАСТРОЙКИ")
+            appendLine("Режим: ${settings.mode} · способ общения: ${if (settings.manualInput) "düğmeyle" else "otomatik"} · " +
                 "karşı dil: ${settings.partnerLang ?: "otomatik"} · okuma hızı: ${settings.speechRate} · " +
                 "çeviri: ${if (settings.quality) "kaliteli (7B)" else "hızlı (1,8B)"}${if (settings.qualityModel) "" else " · 7B indirilmemiş"}")
-            appendLine("Ses motoru: ${settings.ttsEngine ?: "?"} · eksik sesler: ${settings.missingVoices.ifEmpty { listOf("yok") }.joinToString()}")
+            appendLine("Голосовой движок: ${settings.ttsEngine ?: "?"} · eksik sesler: ${settings.missingVoices.ifEmpty { listOf("yok") }.joinToString()}")
             appendLine("Durum: çalışıyor=${status.running} · mikrofon=${status.micMode} (${status.micInfo}) · duraklama=${status.paused ?: "yok"} · " +
                 "kulaklık=${if (status.headsetAttached) "takılı" else "yok"} · medya sesi=%${(status.speakerVolume * 100).toInt()} · " +
                 "karşı dil (tespit)=${status.partnerLang ?: "-"}${if (status.partnerLangLocked) " kilitli" else ""} · hata=${status.error ?: "yok"}")
             appendLine()
-            appendLine("SON KONUŞMALAR (${utterances.size})")
+            appendLine("ПОСЛЕДНИЕ ФРАЗЫ (${utterances.size})")
             utterances.forEach { appendLine(format(it)) }
             appendLine()
-            appendLine("OLAYLAR")
+            appendLine("СОБЫТИЯ")
             engine.recentEvents().takeLast(120).forEach { appendLine(it) }
             appendLine()
-            appendLine("EKLER (${audio.size})")
+            appendLine("ВЛОЖЕНИЯ (${audio.size})")
             audio.forEach { appendLine("${it.name} (${it.length() / 1024} KB)") }
         }
         val report = File(dir(context), "rapor-$stamp.txt")
         report.writeText(text)
         prune(context)
-        val summary = "Canlı Çeviri sorun bildirimi ($stamp): ${userNote.ifBlank { "açıklama yok" }} · ${utterances.size} konuşma, ${audio.size} ses"
+        val summary = "Сообщение о проблеме в приложении «Живой перевод» ($stamp): ${userNote.ifBlank { "açıklama yok" }} · ${utterances.size} konuşma, ${audio.size} ses"
         return Bundle(report, audio, summary)
     }
 
     private fun format(u: Utterance): String {
         val name = { code: String? -> code?.let { c -> Languages.ALL.firstOrNull { it.code == c }?.nameTr ?: c } ?: "-" }
         return "#${u.id} ${if (u.speaker.name == "USER") "Siz" else "Karşı"} ${name(u.sourceLang)}→${name(u.targetLang)} ${u.state}" +
-            (if (u.typed) " yazılı" else " ses ${u.audioMs} ms") +
+            (if (u.typed) " текст" else " звук ${u.audioMs} мс") +
             " yazı=${u.asrMs ?: "-"} ms çeviri=${u.mtMs ?: "-"} ms ilk-ses=${u.latencyMs ?: "-"} ms | ${u.text ?: ""} | ${u.translation ?: ""}" +
             listOfNotNull(u.note, u.detail).takeIf { it.isNotEmpty() }?.let { " | " + it.joinToString(" · ") }.orEmpty()
     }
