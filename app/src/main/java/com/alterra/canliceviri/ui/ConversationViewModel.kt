@@ -109,7 +109,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
             TranslationService.start(getApplication(), mode)
         } catch (e: Exception) {
             // Android 14+: uygulama ekranda değilken mikrofon hizmeti başlatılamaz; izin eksikse de buraya düşer.
-            engine.reportError("Çeviri başlatılamadı: ${e.message ?: e.javaClass.simpleName}")
+            engine.reportError("Не удалось запустить перевод: ${e.message ?: e.javaClass.simpleName}")
         }
     }
 
@@ -176,7 +176,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 setup = setup.copy(qualityProgress = null)
                 chooseQuality(true)
             } catch (e: Exception) {
-                setup = setup.copy(qualityProgress = "İndirilemedi (${e.message}). Wi-Fi'yi ve uygulamanın ağ iznini kontrol edin.")
+                setup = setup.copy(qualityProgress = "Не удалось скачать (${e.message}). Проверьте Wi‑Fi и разрешение приложения на доступ к сети.")
                 return@launch
             }
             refreshSetup()
@@ -232,7 +232,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                         }
                     }
                 } catch (e: Exception) {
-                    setup = setup.copy(modelProgress = "İndirilemedi: $name (${e.message}). İnternet bağlantısını ve uygulamanın ağ iznini kontrol edin.")
+                    setup = setup.copy(modelProgress = "Не удалось скачать: $name (${e.message}). Проверьте подключение к интернету и разрешение приложения на доступ к сети.")
                     return@launch
                 }
             }
@@ -286,7 +286,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 Thread.sleep(2000L * attempt)
             }
         }
-        if (!part.renameTo(target)) throw IllegalStateException("dosya taşınamadı")
+        if (!part.renameTo(target)) throw IllegalStateException("не удалось переместить файл")
     }
 
     private fun downloadOnce(url: String, part: File, progress: (Long, Long) -> Unit) {
@@ -319,7 +319,7 @@ class ConversationViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
         }
-        if (total > 0 && done != total) throw java.io.IOException("eksik indi ($done/$total)")
+        if (total > 0 && done != total) throw java.io.IOException("загрузка не завершена ($done/$total)")
     }
 
     companion object {
