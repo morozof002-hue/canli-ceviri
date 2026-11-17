@@ -46,7 +46,7 @@ import kotlin.math.max
 
 /**
  * Konuşma motoru: mikrofon → konuşma parçaları → kim konuştu → yazıya dökme → çeviri → seslendirme.
- * Türkçe çeviri kulaklığa, karşı tarafın dilindeki çeviri telefon hoparlörüne gider.
+ * Rusça çeviri kulaklığa, karşı tarafın dilindeki çeviri telefon hoparlörüne gider.
  * Hoparlör çalarken mikrofon girişi yok sayılır (uygulama kendi sesini tekrar çevirmesin).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -58,7 +58,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
         val silenceMs: Int = 600,
         val threads: Int = com.alterra.canliceviri.DeviceTuning.threads,
         val asrModel: String = DEFAULT_ASR_MODEL,
-        /** Işın araması: Türkçe testte fayda etmedi (%3,9'a karşı %4,0) ama çözmeyi yarı yarıya yavaşlattı. */
+        /** Işın araması: Rusça testte fayda etmedi (%3,9'a karşı %4,0) ama çözmeyi yarı yarıya yavaşlattı. */
         val beamTurkish: Int = 1,
         val beamForeign: Int = 1,
         val promptTurkish: Boolean = true,
@@ -489,7 +489,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
     fun requestRepeat() {
         val lang = Languages.FOREIGN.firstOrNull { it.code == partnerLang } ?: Languages.FOREIGN.first()
         val id = nextId++
-        upsert(Utterance(id, Speaker.USER, UtteranceState.SPEAKING, 0, "tr", "(kesinti)", lang.code, lang.repeatRequest, note = "tekrar istendi"))
+        upsert(Utterance(id, Speaker.USER, UtteranceState.SPEAKING, 0, "ru", "(kesinti)", lang.code, lang.repeatRequest, note = "tekrar istendi"))
         if (ttsReady) enqueuePlay(id, Speaker.USER, lang.code, lang.repeatRequest, System.currentTimeMillis())
         else update(id) { it.copy(state = UtteranceState.DONE) }
     }
@@ -645,7 +645,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
         if (whisper?.name != settings.asrModel) {
             whisper?.close()
             whisper = WhisperModel.load(File(modelsDir, settings.asrModel))
-            warmUp { whisper?.transcribe(FloatArray(WhisperModel.SAMPLE_RATE / 2), "tr", settings.threads, audioCtx = 256, maxTokens = 4) }
+            warmUp { whisper?.transcribe(FloatArray(WhisperModel.SAMPLE_RATE / 2), "ru", settings.threads, audioCtx = 256, maxTokens = 4) }
         }
         if (whisper == null) {
             _status.update { it.copy(error = "Konuşma tanıma modeli açılamadı") }
@@ -661,7 +661,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
         }
         // Türkçe ve karşı tarafın dilinin (bilinmiyorsa İngilizce) sesi belleğe alınsın; ilk çeviri gecikmesin.
         if (ensureTts()) {
-            tts.warmUp(Languages.TURKISH)
+            tts.warmUp(Languages.RUSSIAN)
             tts.warmUp(Languages.FOREIGN.firstOrNull { it.code == partnerLang } ?: Languages.FOREIGN.first())
         }
         vadPartner?.close()
@@ -775,7 +775,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
         work.trySend(Task.Audio(Segmenter.Segment(user, partner, ms, null, System.currentTimeMillis(), forcedSpeaker = who)))
     }
 
-    /** Yazılan metin: Türkçe (kullanıcı) ya da karşı tarafın dilinde (dil seçili olmalı). */
+    /** Yazılan metin: Rusça (kullanıcı) ya da karşı tarafın dilinde (dil seçili olmalı). */
     fun submitText(text: String, speaker: Speaker): Boolean {
         val t = text.trim()
         if (t.isEmpty() || segmenter == null) return false
@@ -938,14 +938,14 @@ class ConversationEngine(private val context: Context, private val scope: Corout
             val forced = seg.forcedSpeaker != null
             val manual = manualPartnerLang && partnerLang != null
             if (speaker == Speaker.USER) {
-                lang = "tr"
+                lang = "ru"
             } else if (manual && (speaker == Speaker.PARTNER || settings.mode == Mode.LISTENING)) {
                 lang = partnerLang!!
             } else {
                 // Dil tespiti her karşı taraf cümlesinde (kodlayıcı yazıya dökmeyle paylaşıldığı için ucuz).
-                // Türkçe çıkarsa konuşan kullanıcıdır (tek mikrofonda asıl yöntem bu); düğmeyle "karşı taraf" dendiyse Türkçe aday değil.
+                // Rusça çıkarsa konuşan kullanıcıdır (tek mikrofonda asıl yöntem bu); düğmeyle "karşı taraf" dendiyse Türkçe aday değil.
                 val candidates = when {
-                    manual -> listOf("tr", partnerLang!!)
+                    manual -> listOf("ru", partnerLang!!)
                     forced || speaker == Speaker.PARTNER -> Languages.FOREIGN.map { it.code }
                     else -> Languages.ALL.map { it.code }
                 }
@@ -954,16 +954,16 @@ class ConversationEngine(private val context: Context, private val scope: Corout
                 val best = guess?.best
                 if (best == null) {
                     lang = partnerLang ?: "en"
-                } else if (best.first == "tr" && settings.mode == Mode.CONVERSATION && (speaker == null || best.second > 0.8f)) {
+                } else if (best.first == "ru" && settings.mode == Mode.CONVERSATION && (speaker == null || best.second > 0.8f)) {
                     speaker = Speaker.USER
-                    lang = "tr"
+                    lang = "ru"
                 } else {
                     speaker = Speaker.PARTNER
-                    val foreign = guess.probs.filterKeys { it != "tr" }
+                    val foreign = guess.probs.filterKeys { it != "ru" }
                     val top = foreign.maxByOrNull { it.value }
                     val averaged = if (!manual) observeLang(foreign) else null
                     lang = when {
-                        best.first == "tr" && settings.mode == Mode.LISTENING -> "tr"
+                        best.first == "ru" && settings.mode == Mode.LISTENING -> "ru"
                         manual -> partnerLang!!
                         top != null && top.value >= LANG_SURE -> top.key // bu cümle kendinden emin
                         averaged != null -> averaged // değilse son cümlelerin ortalaması
@@ -983,15 +983,14 @@ class ConversationEngine(private val context: Context, private val scope: Corout
                 return
             }
             val maxTokens = max(24, (audioMs / 1000f * 15).toInt() + 10)
-            val turkish = lang == "tr"
-            // İstem: Türkçede nötr cümle (+ sözlük), diğer dillerde yalnızca seyahat sözlüğü.
+            val russian = lang == "ru"
+            // İstem: Rusça için seyahat sözlüğü kullanılır; diğer dillerde de kendi sözlükleri kullanılır.
             val glossary = if (settings.glossary) Languages.ALL.firstOrNull { it.code == lang }?.glossary?.takeIf { it.isNotEmpty() } else null
-            val prompt = listOfNotNull(if (turkish && settings.promptTurkish) WhisperModel.TURKISH_PROMPT else null, glossary)
-                .joinToString(" ").ifEmpty { null }
+            val prompt = glossary
             val r = w.transcribeWithRetry(
                 pcm, lang, threadsNow,
                 audioCtx = audioCtxFor(pcm),
-                beam = if (turkish) settings.beamTurkish else settings.beamForeign,
+                beam = if (russian) settings.beamTurkish else settings.beamForeign,
                 maxTokens = maxTokens,
                 prompt = prompt,
                 fallback = settings.fallback,
@@ -1015,7 +1014,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
 
     private suspend fun processText(job: Task.Text) {
         val id = nextId++
-        val lang = if (job.speaker == Speaker.USER) "tr" else (partnerLang ?: return)
+        val lang = if (job.speaker == Speaker.USER) "ru" else (partnerLang ?: return)
         // Yazılan metinde bekleme kabul edilir: kaliteli model varsa onunla.
         translateAndSpeak(id, job.speaker, lang, job.text, 0, null, null, System.currentTimeMillis(), typed = true, quality = true)
     }
@@ -1037,7 +1036,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
 
     private suspend fun editNow(job: Task.Edit) {
         val u = _utterances.value.firstOrNull { it.id == job.id } ?: return
-        val lang = u.sourceLang ?: if (u.speaker == Speaker.USER) "tr" else (partnerLang ?: return)
+        val lang = u.sourceLang ?: if (u.speaker == Speaker.USER) "ru" else (partnerLang ?: return)
         if (job.text == u.text) {
             respeakNow(job.id)
             return
@@ -1061,7 +1060,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
                 note = if (loading) listOfNotNull(note, "kaliteli model yükleniyor…").joinToString(" · ") else note, detail = detail, typed = typed,
             )
         )
-        val target = if (who == Speaker.USER) (partnerLang ?: "en") else "tr"
+        val target = if (who == Speaker.USER) (partnerLang ?: "en") else "ru"
         if (lang == target) {
             upsert(Utterance(id, who, UtteranceState.DONE, audioMs, lang, text, target, text, asrMs, 0, note = note, detail = detail, typed = typed))
             return
@@ -1093,7 +1092,7 @@ class ConversationEngine(private val context: Context, private val scope: Corout
     /** Kullanıcının çevirisi hoparlöre, karşı tarafınki kulaklığa (yoksa hoparlöre). */
     private fun enqueuePlay(id: Long, who: Speaker, target: String, text: String, speechEndedAt: Long) {
         val device = if (who == Speaker.USER) AudioDevices.speaker(context) else AudioDevices.headsetOutput(context) ?: AudioDevices.speaker(context)
-        val targetLang = Languages.ALL.firstOrNull { it.code == target } ?: Languages.TURKISH
+        val targetLang = Languages.ALL.firstOrNull { it.code == target } ?: Languages.RUSSIAN
         pendingPlays.incrementAndGet()
         _status.update { it.copy(playing = true) }
         update(id) { it.copy(state = UtteranceState.SPEAKING) }
