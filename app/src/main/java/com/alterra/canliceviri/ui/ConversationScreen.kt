@@ -183,7 +183,7 @@ private fun ModeSwitch(vm: ConversationViewModel) {
 @Composable
 private fun LanguagePicker(vm: ConversationViewModel, status: EngineStatus) {
     var open by remember { mutableStateOf(false) }
-    val label = vm.partnerLang?.let { code -> Languages.FOREIGN.first { it.code == code }.nameTr } ?: "Автоматически"
+    val label = vm.partnerLang?.let { code -> Languages.FOREIGN.firstOrNull { it.code == code }?.nameTr ?: "Автоматически" } ?: "Автоматически"
     Box {
         OutlinedButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 12.dp)) {
             Text("$label ▾", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)

@@ -24,7 +24,7 @@ class Prefs(context: Context) {
 
     /** Elle seçilmiş karşı taraf dili (null: otomatik). */
     var partnerLang: String?
-        get() = p.getString("karsi_dil", null)
+        get() = p.getString("karsi_dil", null)?.takeUnless { it == "ru" }
         set(v) = p.edit().putString("karsi_dil", v).apply()
 
     /** Kaliteli (7B) çeviri modu. */
