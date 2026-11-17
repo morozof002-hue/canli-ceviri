@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
     /** Geliştirici komutları yalnızca debug sürümde: adb shell am start … --es bench "small,turbo". */
     private fun handleDevIntent(intent: Intent?) {
         if (!BuildConfig.DEBUG) return
-        android.util.Log.i("CanliCeviri", "geliştirici niyeti: ${intent?.extras?.keySet()}")
+        android.util.Log.i("CanliCeviri", "намерение разработчика: ${intent?.extras?.keySet()}")
         intent?.getStringExtra("bench")?.let {
             intent.removeExtra("bench")
             vm.runBench(it)
@@ -173,15 +173,15 @@ class MainActivity : ComponentActivity() {
     private fun shareText(text: String) {
         val send = Intent(Intent.ACTION_SEND)
             .setType("text/plain")
-            .putExtra(Intent.EXTRA_SUBJECT, "Canlı Çeviri cihaz testi")
+            .putExtra(Intent.EXTRA_SUBJECT, "Проверка устройства — Живой перевод")
             .putExtra(Intent.EXTRA_TEXT, text)
-        startActivity(Intent.createChooser(send, "Raporu paylaş"))
+        startActivity(Intent.createChooser(send, "Поделиться отчётом"))
     }
 
     private fun copyText(text: String) {
         val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("Canlı Çeviri raporu", text))
-        Toast.makeText(this, "Rapor kopyalandı", Toast.LENGTH_SHORT).show()
+        clipboard.setPrimaryClip(ClipData.newPlainText("Отчёт приложения «Живой перевод»", text))
+        Toast.makeText(this, "Отчёт скопирован", Toast.LENGTH_SHORT).show()
     }
 
     private fun shareFiles(files: List<File>) {
@@ -191,7 +191,7 @@ class MainActivity : ComponentActivity() {
             .setType("audio/wav")
             .putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        startActivity(Intent.createChooser(send, "Kayıtları paylaş"))
+        startActivity(Intent.createChooser(send, "Поделиться записями"))
     }
 
     /** Sorun bildirimi: rapor + (isteğe bağlı) son parçaların sesi, WhatsApp'ta geliştiricinin sohbetine. */
@@ -224,7 +224,7 @@ class MainActivity : ComponentActivity() {
                 send.removeExtra("jid")
             }
         }
-        startActivity(Intent.createChooser(send, "Raporu gönder"))
+        startActivity(Intent.createChooser(send, "Отправить отчёт"))
     }
 
     private fun isPackageInstalled(pkg: String) = try {
@@ -234,7 +234,7 @@ class MainActivity : ComponentActivity() {
         false
     }
 
-    /** Samsung "uyuyan uygulama" kısıtı ön plan hizmetini öldürmesin; sistem penceresi bir kez açılır. */
+    /** Samsung "приложение приостанавливается" kısıtı ön plan hizmetini öldürmesin; sistem penceresi bir kez açılır. */
     private fun requestIgnoreBatteryOptimizations() {
         convo.markBatteryAsked()
         try {
