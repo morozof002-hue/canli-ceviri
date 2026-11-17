@@ -401,7 +401,7 @@ private fun Bubble(
                     val dst = langName(u.targetLang)
                     val marks = (if (u.typed) " ✎" else "") + (if (u.quality) " ✦" else "")
                     Text(
-                        (if (mine) "Siz → $dst" else "Karşı taraf · $src") + marks,
+                        (if (mine) "Siz → $dst" else "Собеседник · $src") + marks,
                         style = MaterialTheme.typography.labelMedium,
                         color = onBubbleMuted,
                     )
