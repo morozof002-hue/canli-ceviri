@@ -145,21 +145,21 @@ fun ConversationScreen(
 private fun Header(vm: ConversationViewModel, status: EngineStatus, onOpenDiagnostics: () -> Unit, onOpenSettings: () -> Unit, onReport: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Canlı Çeviri", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text("Живой перевод", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         LanguagePicker(vm, status)
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Menü") }
+            IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "Меню") }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 if (status.running) {
                     DropdownMenuItem(
-                        text = { Text("Tekrar söylemesini iste") },
+                        text = { Text("Попросить повторить") },
                         onClick = { menu = false; vm.requestRepeat() },
                     )
                 }
-                DropdownMenuItem(text = { Text("Sorun bildir") }, onClick = { menu = false; onReport() })
-                DropdownMenuItem(text = { Text("Ayarlar") }, onClick = { menu = false; onOpenSettings() })
-                if (BuildConfig.DEBUG) DropdownMenuItem(text = { Text("Cihaz testi") }, onClick = { menu = false; onOpenDiagnostics() })
-                DropdownMenuItem(text = { Text("Konuşmayı temizle") }, onClick = { menu = false; vm.clear() })
+                DropdownMenuItem(text = { Text("Сообщить о проблеме") }, onClick = { menu = false; onReport() })
+                DropdownMenuItem(text = { Text("Настройки") }, onClick = { menu = false; onOpenSettings() })
+                if (BuildConfig.DEBUG) DropdownMenuItem(text = { Text("Проверка устройства") }, onClick = { menu = false; onOpenDiagnostics() })
+                DropdownMenuItem(text = { Text("Очистить диалог") }, onClick = { menu = false; vm.clear() })
             }
         }
     }
@@ -172,24 +172,24 @@ private fun ModeSwitch(vm: ConversationViewModel) {
         SegmentedButton(
             selected = vm.mode == Mode.CONVERSATION, onClick = { vm.selectMode(Mode.CONVERSATION) },
             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-        ) { Text("Konuşma") }
+        ) { Text("Разговор") }
         SegmentedButton(
             selected = vm.mode == Mode.LISTENING, onClick = { vm.selectMode(Mode.LISTENING) },
             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-        ) { Text("Dinleme modu") }
+        ) { Text("Режим прослушивания") }
     }
 }
 
 @Composable
 private fun LanguagePicker(vm: ConversationViewModel, status: EngineStatus) {
     var open by remember { mutableStateOf(false) }
-    val label = vm.partnerLang?.let { code -> Languages.FOREIGN.first { it.code == code }.nameTr } ?: "Otomatik"
+    val label = vm.partnerLang?.let { code -> Languages.FOREIGN.first { it.code == code }.nameTr } ?: "Автоматически"
     Box {
         OutlinedButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 12.dp)) {
             Text("$label ▾", maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(text = { Text("Otomatik algıla") }, onClick = { open = false; vm.selectPartnerLang(null) })
+            DropdownMenuItem(text = { Text("Определять автоматически") }, onClick = { open = false; vm.selectPartnerLang(null) })
             Languages.FOREIGN.forEach { l ->
                 DropdownMenuItem(text = { Text("${l.nameTr} · ${l.nativeName}") }, onClick = { open = false; vm.selectPartnerLang(l.code) })
             }
@@ -202,32 +202,32 @@ private fun SetupCard(vm: ConversationViewModel, onInstallVoices: (String?) -> U
     val s = vm.setup
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Kurulum (bir kez, internet gerekir)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            if (!s.checked) Text("Kontrol ediliyor…")
+            Text("Первоначальная настройка (нужен интернет)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            if (!s.checked) Text("Проверка…")
             if (s.missingModels.isNotEmpty()) {
                 Text(
-                    "Eksik modeller: ${s.missingModels.joinToString()}. Konuşma tanıma (~265 MB) ve çeviri (~1,1 GB) modelleri bir kez indirilir.",
+                    "Не хватает моделей: ${s.missingModels.joinToString()}. Модели распознавания речи (~265 МБ) и перевода (~1,1 ГБ) нужно скачать один раз.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 if (s.modelProgress != null) Text(s.modelProgress, style = MaterialTheme.typography.bodySmall)
-                else Button(onClick = vm::downloadModels) { Text("Modelleri indir") }
+                else Button(onClick = vm::downloadModels) { Text("Скачать модели") }
             }
             if (s.missingVoices.isNotEmpty() && s.googleTtsMissing) {
                 Text(
-                    "Sesli okuma için Google'ın ses motoru gerekli (\"Speech Services by Google\"). Play Store'dan kurun, " +
-                        "sonra buraya dönüp dillerin sesini indirin.",
+                    "Для озвучивания нужен голосовой движок Google (\"Speech Services by Google\"). Установите его из Play Маркета, " +
+                        "затем вернитесь сюда и скачайте голосовые пакеты для языков.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Button(onClick = onInstallGoogleTts) { Text("Play Store'da aç") }
+                Button(onClick = onInstallGoogleTts) { Text("Открыть Play Маркет") }
             } else if (s.missingVoices.isNotEmpty()) {
                 Text(
-                    "Sesli okuma için internetsiz ses eksik: ${s.missingVoices.joinToString()}. " +
-                        "Açılan listede bu dillere dokunup ses paketini indirin; eksik dil İngilizce sesle okunmaz, yalnızca ekranda görünür.",
+                    "Не хватает офлайн-голосов для озвучивания: ${s.missingVoices.joinToString()}. " +
+                        "В открывшемся списке выберите эти языки и скачайте голосовые пакеты. Если голос для языка не установлен, текст будет только показан на экране, без озвучивания английским голосом.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                OutlinedButton(onClick = { onInstallVoices(vm.ttsEnginePackage) }) { Text("Ses paketlerini indir") }
+                OutlinedButton(onClick = { onInstallVoices(vm.ttsEnginePackage) }) { Text("Скачать голосовые пакеты") }
             }
-            TextButton(onClick = vm::refreshSetup) { Text("Yeniden kontrol et") }
+            TextButton(onClick = vm::refreshSetup) { Text("Проверить снова") }
         }
     }
 }
@@ -236,12 +236,12 @@ private fun SetupCard(vm: ConversationViewModel, onInstallVoices: (String?) -> U
 private fun BatteryCard(onFixBattery: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Pil kısıtlaması", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("Ограничение фоновой работы", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(
-                "Ekran kapalıyken çevirinin durmaması için telefonun bu uygulamayı uyutmaması gerekir. Açılan pencerede izin verin.",
+                "Чтобы перевод не останавливался при выключенном экране, телефону нужно разрешить приложению работать в фоне. Разрешите это в открывшемся окне.",
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = onFixBattery) { Text("Kısıtlamayı kaldır") }
+            Button(onClick = onFixBattery) { Text("Снять ограничение") }
         }
     }
 }
@@ -251,18 +251,18 @@ private fun StatusBar(vm: ConversationViewModel, status: EngineStatus) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         val elapsed = sec(System.currentTimeMillis() - status.recordingSince)
         val (text, color) = when {
-            !status.running -> "Durduruldu" to MaterialTheme.colorScheme.outline
-            status.paused != null -> "Duraklatıldı: ${status.paused}. Bitince kendiliğinden sürer." to MaterialTheme.colorScheme.error
-            status.recording == Speaker.USER -> "Siz konuşuyorsunuz · $elapsed" to MaterialTheme.colorScheme.primary
-            status.recording == Speaker.PARTNER -> "Karşı taraf konuşuyor · $elapsed" to MaterialTheme.colorScheme.tertiary
+            !status.running -> "Остановлено" to MaterialTheme.colorScheme.outline
+            status.paused != null -> "Пауза: ${status.paused}. После завершения продолжится автоматически." to MaterialTheme.colorScheme.error
+            status.recording == Speaker.USER -> "Говорите вы · $elapsed" to MaterialTheme.colorScheme.primary
+            status.recording == Speaker.PARTNER -> "Говорит собеседник · $elapsed" to MaterialTheme.colorScheme.tertiary
             // Dinleme hep önde: okuma sürerken de mikrofon açık (yalnızca hoparlör çalarken kapalı).
-            status.hearingAnyone && status.hearing == Speaker.USER -> "Siz konuşuyorsunuz" to MaterialTheme.colorScheme.primary
-            status.hearingAnyone && status.hearing == Speaker.PARTNER -> "Karşı taraf konuşuyor" to MaterialTheme.colorScheme.tertiary
-            status.hearingAnyone -> "Konuşma duyuluyor" to MaterialTheme.colorScheme.primary
-            status.busy -> "Çevriliyor…" to MaterialTheme.colorScheme.primary
-            status.playing -> "Dinliyor · çeviri okunuyor" to MaterialTheme.colorScheme.primary
-            vm.manualInput -> "Konuşurken düğmeyi basılı tutun" to MaterialTheme.colorScheme.onSurfaceVariant
-            else -> "Dinliyor" to MaterialTheme.colorScheme.onSurfaceVariant
+            status.hearingAnyone && status.hearing == Speaker.USER -> "Говорите вы" to MaterialTheme.colorScheme.primary
+            status.hearingAnyone && status.hearing == Speaker.PARTNER -> "Говорит собеседник" to MaterialTheme.colorScheme.tertiary
+            status.hearingAnyone -> "Речь обнаружена" to MaterialTheme.colorScheme.primary
+            status.busy -> "Перевод…" to MaterialTheme.colorScheme.primary
+            status.playing -> "Слушает · озвучивает перевод" to MaterialTheme.colorScheme.primary
+            vm.manualInput -> "Во время речи удерживайте кнопку" to MaterialTheme.colorScheme.onSurfaceVariant
+            else -> "Слушает" to MaterialTheme.colorScheme.onSurfaceVariant
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
@@ -274,11 +274,11 @@ private fun StatusBar(vm: ConversationViewModel, status: EngineStatus) {
             Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             if (status.running) {
                 val mics = when (status.micMode) {
-                    MicMode.DUAL -> "kulaklık + telefon"
-                    MicMode.SINGLE -> "telefon mikrofonu"
+                    MicMode.DUAL -> "Наушники + телефон"
+                    MicMode.SINGLE -> "Микрофон телефона"
                     MicMode.NONE -> ""
                 }
-                // Otomatik dilde tespit edilen dil burada (düğme hep "Otomatik" yazar).
+                // Otomatik dilde tespit edilen dil burada (düğme hep "Автоматически" yazar).
                 val detected = if (vm.partnerLang == null) status.partnerLang?.let { c -> Languages.FOREIGN.firstOrNull { it.code == c }?.nameTr } else null
                 Text(
                     listOfNotNull(detected?.let { if (status.partnerLangLocked) it else "$it?" }, mics).joinToString(" · "),
@@ -289,8 +289,8 @@ private fun StatusBar(vm: ConversationViewModel, status: EngineStatus) {
         }
         if (status.running && vm.devInfo) {
             if (!vm.manualInput) {
-                if (status.micMode == MicMode.DUAL) Level("Siz", status.levelUser)
-                Level(if (status.micMode == MicMode.DUAL) "Karşı" else "Mikrofon", status.levelPartner)
+                if (status.micMode == MicMode.DUAL) Level("Вы", status.levelUser)
+                Level(if (status.micMode == MicMode.DUAL) "Собеседник" else "Микрофон", status.levelPartner)
             }
             if (status.micInfo.isNotEmpty()) {
                 Text(status.micInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -299,10 +299,10 @@ private fun StatusBar(vm: ConversationViewModel, status: EngineStatus) {
         if (status.running && !status.headsetAttached && status.speakerVolume < 0.5f) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Hoparlör sesi kısık (%${(status.speakerVolume * 100).toInt()}); karşı taraf duymayabilir.",
+                    "Низкая громкость динамика (%${(status.speakerVolume * 100).toInt()}); собеседник может вас не слышать.",
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error, modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = vm::raiseVolume) { Text("Yükselt") }
+                TextButton(onClick = vm::raiseVolume) { Text("Увеличить") }
             }
         }
         status.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium) }
@@ -353,8 +353,8 @@ private fun Conversation(
     if (items.isEmpty()) {
         Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text(
-                if (manual) "Başlat'a basın. Konuşurken \"Ben konuşuyorum\", karşı taraf konuşurken \"Karşı taraf konuşuyor\" düğmesini basılı tutun."
-                else "Başlat'a basın. Karşı taraf konuşunca Türkçesi kulaklıktan, siz konuşunca çevirisi hoparlörden gelir. Dili uygulama kendisi bulur.",
+                if (manual) "Нажмите «Старт». Когда говорите вы, удерживайте кнопку «Говорю я», а когда собеседник — «Говорит собеседник»."
+                else "Нажмите «Старт». Речь собеседника будет переведена на турецкий и воспроизведена в наушниках, а ваш перевод прозвучит через динамик. Язык приложение определяет автоматически.",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -409,7 +409,7 @@ private fun Bubble(
                         u.text == null -> Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                             Spacer(Modifier.width(8.dp))
-                            Text("Yazıya dökülüyor…", style = MaterialTheme.typography.bodyMedium, color = onBubble)
+                            Text("Распознавание речи…", style = MaterialTheme.typography.bodyMedium, color = onBubble)
                         }
                         else -> Text(u.text, style = MaterialTheme.typography.bodyMedium, color = onBubbleMuted)
                     }
@@ -424,21 +424,21 @@ private fun Bubble(
                     }
                     // Müşteri yalnızca anlamlı notları görür; süreler ve dil tespiti geliştirici bilgisi.
                     val timing = if (!devInfo) null else listOfNotNull(
-                        u.asrMs?.let { "yazı ${sec(it)}" },
-                        u.mtMs?.let { "çeviri ${sec(it)}" },
-                        u.latencyMs?.let { "ses ${sec(it)}" },
+                        u.asrMs?.let { "распознавание ${sec(it)}" },
+                        u.mtMs?.let { "перевод ${sec(it)}" },
+                        u.latencyMs?.let { "озвучивание ${sec(it)}" },
                     ).joinToString(" · ").takeIf { it.isNotEmpty() }
                     val footer = listOfNotNull(timing, u.note, if (devInfo) u.detail else null, stateText(u.state)).joinToString(" · ")
                     if (footer.isNotEmpty()) Text(footer, style = MaterialTheme.typography.bodySmall, color = onBubbleMuted)
                 }
             }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                if (u.translation != null) DropdownMenuItem(text = { Text("Tekrar oku") }, onClick = { menu = false; onRespeak(u.id) })
+                if (u.translation != null) DropdownMenuItem(text = { Text("Повторить") }, onClick = { menu = false; onRespeak(u.id) })
                 if (qualityModel && !u.quality && u.text != null && u.sourceLang != null) {
-                    DropdownMenuItem(text = { Text("Kaliteli çevir (yavaş)") }, onClick = { menu = false; onRequality(u.id) })
+                    DropdownMenuItem(text = { Text("Перевести качественно (медленно)") }, onClick = { menu = false; onRequality(u.id) })
                 }
-                if (mine && u.text != null) DropdownMenuItem(text = { Text("Düzenle") }, onClick = { menu = false; onEdit(u) })
-                if (u.translation != null) DropdownMenuItem(text = { Text("Tam ekran göster") }, onClick = { menu = false; onFullscreen(u) })
+                if (mine && u.text != null) DropdownMenuItem(text = { Text("Изменить") }, onClick = { menu = false; onEdit(u) })
+                if (u.translation != null) DropdownMenuItem(text = { Text("На весь экран") }, onClick = { menu = false; onFullscreen(u) })
             }
         }
     }
@@ -449,12 +449,12 @@ private fun Bubble(
 private fun HoldButtons(vm: ConversationViewModel, status: EngineStatus) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         HoldButton(
-            "Ben konuşuyorum", active = status.recording == Speaker.USER,
+            "Говорю я", active = status.recording == Speaker.USER,
             color = MaterialTheme.colorScheme.primary, onColor = MaterialTheme.colorScheme.onPrimary,
             onBegin = { vm.beginManual(Speaker.USER) }, onEnd = vm::endManual, modifier = Modifier.weight(1f),
         )
         HoldButton(
-            "Karşı taraf konuşuyor", active = status.recording == Speaker.PARTNER,
+            "Говорит собеседник", active = status.recording == Speaker.PARTNER,
             color = MaterialTheme.colorScheme.tertiary, onColor = MaterialTheme.colorScheme.onTertiary,
             onBegin = { vm.beginManual(Speaker.PARTNER) }, onEnd = vm::endManual, modifier = Modifier.weight(1f),
         )
@@ -507,7 +507,7 @@ private fun TextBar(vm: ConversationViewModel, status: EngineStatus) {
     val hint = when {
         who == Speaker.USER -> Languages.TURKISH.typeHint
         partner != null -> partner.typeHint
-        else -> "Önce karşı tarafın dilini seçin"
+        else -> "Сначала выберите язык собеседника"
     }
     fun send() {
         if (text.isBlank() || !enabled) return
@@ -517,7 +517,7 @@ private fun TextBar(vm: ConversationViewModel, status: EngineStatus) {
         FilterChip(
             selected = who == Speaker.PARTNER,
             onClick = { who = if (who == Speaker.USER) Speaker.PARTNER else Speaker.USER },
-            label = { Text(if (who == Speaker.USER) "Ben ▾" else "${partner?.nameTr ?: "Karşı taraf"} ▾") },
+            label = { Text(if (who == Speaker.USER) "Я ▾" else "${partner?.nameTr ?: "Karşı taraf"} ▾") },
         )
         OutlinedTextField(
             value = text,
@@ -530,7 +530,7 @@ private fun TextBar(vm: ConversationViewModel, status: EngineStatus) {
             keyboardActions = KeyboardActions(onSend = { send() }),
             trailingIcon = {
                 IconButton(onClick = { send() }, enabled = text.isNotBlank() && enabled) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Gönder")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Отправить")
                 }
             },
         )
@@ -552,7 +552,7 @@ private fun BigButton(vm: ConversationViewModel, status: EngineStatus, onStart: 
         if (status.starting) {
             CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = Color.White)
             Spacer(Modifier.width(10.dp))
-            Text("Hazırlanıyor…", style = MaterialTheme.typography.titleMedium)
+            Text("Подготовка…", style = MaterialTheme.typography.titleMedium)
         } else {
             Box(
                 Modifier
@@ -561,7 +561,7 @@ private fun BigButton(vm: ConversationViewModel, status: EngineStatus, onStart: 
                     .background(if (running) Color.White else MaterialTheme.colorScheme.onPrimary)
             )
             Spacer(Modifier.width(10.dp))
-            Text(if (running) "Durdur" else "Başlat", style = MaterialTheme.typography.titleLarge)
+            Text(if (running) "Durdur" else "Старт", style = MaterialTheme.typography.titleLarge)
         }
     }
 }
@@ -576,77 +576,77 @@ private fun SettingsSheet(vm: ConversationViewModel, onClose: () -> Unit, onFixB
                 .padding(bottom = 36.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("Ayarlar", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text("Настройки", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
 
-            Text("Konuşma biçimi", style = MaterialTheme.typography.titleMedium)
+            Text("Режим разговора", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = !vm.manualInput, onClick = { vm.chooseManualInput(false) }, label = { Text("Otomatik") })
-                FilterChip(selected = vm.manualInput, onClick = { vm.chooseManualInput(true) }, label = { Text("Düğmeyle") })
+                FilterChip(selected = !vm.manualInput, onClick = { vm.chooseManualInput(false) }, label = { Text("Автоматически") })
+                FilterChip(selected = vm.manualInput, onClick = { vm.chooseManualInput(true) }, label = { Text("Вручную") })
             }
             Text(
-                "Otomatik: uygulama kimin konuştuğunu kendisi anlar. Düğmeyle: konuşan, ilgili düğmeyi basılı tutar; " +
-                    "gürültülü yerde ve kulaklıksız kullanımda daha güvenilir.",
+                "Автоматически: приложение само определяет, кто говорит. Вручную: говорящий удерживает соответствующую кнопку; " +
+                    "так надёжнее в шумных местах и без наушников.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Text("Çeviri kalitesi", style = MaterialTheme.typography.titleMedium)
+            Text("Качество перевода", style = MaterialTheme.typography.titleMedium)
             if (vm.setup.qualityModel) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = !vm.quality, onClick = { vm.chooseQuality(false) }, label = { Text("Hızlı") })
-                    FilterChip(selected = vm.quality, onClick = { vm.chooseQuality(true) }, label = { Text("Kaliteli (yavaş)") })
+                    FilterChip(selected = !vm.quality, onClick = { vm.chooseQuality(false) }, label = { Text("Быстрый") })
+                    FilterChip(selected = vm.quality, onClick = { vm.chooseQuality(true) }, label = { Text("Качественный (медленный)") })
                 }
                 Text(
-                    "Hızlı: her cümle 1-2 sn, ara sıra anlam hatası. Kaliteli: 5-10 sn, çok daha güvenilir; hastane, polis gibi önemli " +
-                        "konuşmalar için. Yazılan metinler ve \"Kaliteli çevir\" her zaman kaliteli modeli kullanır.",
+                    "Быстрый: 1–2 секунды на фразу, иногда возможны ошибки смысла. Качественный: 5–10 секунд, значительно точнее; подходит для важных " +
+                        "разговоров, например в больнице или полиции. Введённый текст и команда «Перевести качественно» всегда используют качественную модель.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 Text(
-                    "Kaliteli çeviri modeli (4,6 GB, Wi-Fi'de bir kez) indirilirse önemli cümleler daha güvenilir çevrilir; " +
-                        "canlı sohbet hızlı modelle sürer.",
+                    "Если один раз скачать качественную модель перевода (4,6 ГБ, по Wi‑Fi), важные фразы будут переводиться точнее; " +
+                        "в живом диалоге продолжит использоваться быстрая модель.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 val progress = vm.setup.qualityProgress
                 if (progress != null) Text(progress, style = MaterialTheme.typography.bodySmall)
-                else OutlinedButton(onClick = vm::downloadQualityModel) { Text("Kaliteli modeli indir (4,6 GB)") }
+                else OutlinedButton(onClick = vm::downloadQualityModel) { Text("Скачать качественную модель (4,6 ГБ)") }
             }
 
-            Text("Sesli okuma", style = MaterialTheme.typography.titleMedium)
+            Text("Озвучивание", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = vm.readAloud == ReadAloud.ALWAYS, onClick = { vm.chooseReadAloud(ReadAloud.ALWAYS) }, label = { Text("Her zaman") })
-                FilterChip(selected = vm.readAloud == ReadAloud.CONVERSATION, onClick = { vm.chooseReadAloud(ReadAloud.CONVERSATION) }, label = { Text("Yalnızca konuşmada") })
-                FilterChip(selected = vm.readAloud == ReadAloud.NEVER, onClick = { vm.chooseReadAloud(ReadAloud.NEVER) }, label = { Text("Kapalı") })
+                FilterChip(selected = vm.readAloud == ReadAloud.ALWAYS, onClick = { vm.chooseReadAloud(ReadAloud.ALWAYS) }, label = { Text("Всегда") })
+                FilterChip(selected = vm.readAloud == ReadAloud.CONVERSATION, onClick = { vm.chooseReadAloud(ReadAloud.CONVERSATION) }, label = { Text("Только в режиме разговора") })
+                FilterChip(selected = vm.readAloud == ReadAloud.NEVER, onClick = { vm.chooseReadAloud(ReadAloud.NEVER) }, label = { Text("Выключено") })
             }
             Text(
-                "Dinleme modunda çeviri yalnızca kulaklık takılıyken okunur (hoparlör çalarken mikrofon kapanır). Uzun konuşmalarda okuma " +
-                    "yetişemezse yeni çeviriler ekranda kalır. Kapalıyken her şey anında ve yalnızca ekranda.",
+                "В режиме прослушивания перевод озвучивается только при подключённых наушниках (во время воспроизведения через динамик микрофон отключается). Если при длинном разговоре озвучивание " +
+                    "не успевает, новые переводы останутся на экране. При отключении озвучивания всё сразу отображается только на экране.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Text("Okuma hızı", style = MaterialTheme.typography.titleMedium)
+            Text("Скорость озвучивания", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(selected = vm.speechRate >= 1f, onClick = { vm.chooseSpeechRate(1f) }, label = { Text("Normal") })
-                FilterChip(selected = vm.speechRate < 1f, onClick = { vm.chooseSpeechRate(0.8f) }, label = { Text("Yavaş") })
+                FilterChip(selected = vm.speechRate >= 1f, onClick = { vm.chooseSpeechRate(1f) }, label = { Text("Обычная") })
+                FilterChip(selected = vm.speechRate < 1f, onClick = { vm.chooseSpeechRate(0.8f) }, label = { Text("Медленная") })
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Telefon mikrofonunda gürültü bastırma (Başlat'ta uygulanır)", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text("Шумоподавление микрофона телефона (включается при старте)", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 Switch(checked = vm.enhance, onCheckedChange = vm::chooseEnhance)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Sorun bildirimine son konuşmaların sesini ekle", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text("Прикладывать запись последних разговоров к сообщению о проблеме", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 Switch(checked = vm.attachAudio, onCheckedChange = vm::chooseAttachAudio)
             }
 
             Text(
-                "Hoparlör sesi: kulaklık takılıyken ses tuşu kulaklığın sesini ayarlar. Hoparlörün sesini kulaklığı çıkarıp ayarlayın.",
+                "Громкость динамика: при подключённых наушниках кнопки громкости регулируют наушники. Чтобы настроить динамик, отключите наушники.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (BuildConfig.DEBUG) Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Geliştirici bilgileri (süreler, dil tespiti, ses seviyeleri)", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                Text("Техническая информация (длительность, определение языка, уровни звука)", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 Switch(checked = vm.devInfo, onCheckedChange = vm::chooseDevInfo)
             }
-            if (vm.setup.batteryRestricted) TextButton(onClick = { onClose(); onFixBattery() }) { Text("Pil kısıtlamasını kaldır") }
+            if (vm.setup.batteryRestricted) TextButton(onClick = { onClose(); onFixBattery() }) { Text("Снять ограничение фоновой работы") }
         }
     }
 }
@@ -658,28 +658,28 @@ private fun ReportDialog(vm: ConversationViewModel, onSend: (String, Boolean) ->
     var attach by rememberSaveable { mutableStateOf(vm.attachAudio) }
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text("Sorun bildir") },
+        title = { Text("Сообщить о проблеме") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), minLines = 2,
-                    placeholder = { Text("Ne oldu? (isteğe bağlı)") },
+                    placeholder = { Text("Что произошло? (необязательно)") },
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Son konuşmaların ses kaydını ekle (karşı tarafın sesi de gider)",
+                        "Приложить запись последних разговоров (включая голос собеседника)",
                         style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
                     )
                     Switch(checked = attach, onCheckedChange = { attach = it })
                 }
                 Text(
-                    "Son konuşmalar, süreler ve kararlar rapora yazılır. WhatsApp açılır; geliştirici seçili gelmezse listeden seçin ve gönderin.",
+                    "В отчёт будут добавлены последние разговоры, длительность и результаты. Откроется WhatsApp; если получатель не выбран автоматически, выберите его и отправьте сообщение.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
-        confirmButton = { Button(onClick = { onSend(note, attach); onClose() }) { Text("WhatsApp'tan gönder") } },
-        dismissButton = { TextButton(onClick = onClose) { Text("Vazgeç") } },
+        confirmButton = { Button(onClick = { onSend(note, attach); onClose() }) { Text("Отправить через WhatsApp") } },
+        dismissButton = { TextButton(onClick = onClose) { Text("Отмена") } },
     )
 }
 
@@ -688,12 +688,12 @@ private fun EditDialog(u: Utterance, onSave: (String) -> Unit, onClose: () -> Un
     var text by rememberSaveable { mutableStateOf(u.text ?: "") }
     AlertDialog(
         onDismissRequest = onClose,
-        title = { Text("Söylediğinizi düzeltin") },
+        title = { Text("Исправьте распознанный текст") },
         text = {
             OutlinedTextField(value = text, onValueChange = { text = it }, modifier = Modifier.fillMaxWidth(), minLines = 2)
         },
-        confirmButton = { Button(onClick = { onSave(text) }, enabled = text.isNotBlank()) { Text("Çevir ve oku") } },
-        dismissButton = { TextButton(onClick = onClose) { Text("Vazgeç") } },
+        confirmButton = { Button(onClick = { onSave(text) }, enabled = text.isNotBlank()) { Text("Перевести и озвучить") } },
+        dismissButton = { TextButton(onClick = onClose) { Text("Отмена") } },
     )
 }
 
@@ -720,8 +720,8 @@ private fun FullscreenDialog(u: Utterance, onRespeak: () -> Unit, onClose: () ->
                 textAlign = TextAlign.Center, modifier = Modifier.align(Alignment.Center),
             )
             Row(Modifier.align(Alignment.BottomCenter), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onRespeak) { Text("Oku") }
-                OutlinedButton(onClick = onClose) { Text("Kapat", color = Color.White) }
+                Button(onClick = onRespeak) { Text("Озвучить") }
+                OutlinedButton(onClick = onClose) { Text("Закрыть", color = Color.White) }
             }
         }
     }
@@ -733,8 +733,8 @@ private fun sec(ms: Long) = String.format(Locale.forLanguageTag("tr"), "%.1f sn"
 
 private fun stateText(s: UtteranceState): String? = when (s) {
     UtteranceState.TRANSCRIBING -> null
-    UtteranceState.TRANSLATING -> "çevriliyor"
-    UtteranceState.SPEAKING -> "okunuyor"
-    UtteranceState.ERROR -> "hata"
+    UtteranceState.TRANSLATING -> "переводится"
+    UtteranceState.SPEAKING -> "озвучивается"
+    UtteranceState.ERROR -> "ошибка"
     UtteranceState.DONE, UtteranceState.DROPPED -> null
 }
