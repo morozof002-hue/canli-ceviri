@@ -2,7 +2,7 @@ package com.alterra.canliceviri
 
 import java.util.Locale
 
-/** Uygulamanın dillerinden biri. Kullanıcının dili her zaman Türkçe. */
+/** Один из поддерживаемых языков приложения. Основной язык пользователя — русский. */
 data class Lang(
     /** ISO 639-1 kodu; Whisper ve çeviri modeli aynı kodları kullanıyor. */
     val code: String,
@@ -48,8 +48,14 @@ object Languages {
         "Bir kesinti oldu, lütfen tekrar söyler misiniz?", "Введите текст…",
     )
 
-    /** Dünyada en çok konuşulan 10 dil + Avrupa ve Doğu Asya'dan 8 dil. */
+    val RUSSIAN = Lang(
+        "ru", "Русский", "Русский", Locale.forLanguageTag("ru-RU"), "Здравствуйте, где паспортный контроль?",
+        "Извините, произошёл сбой. Не могли бы вы повторить?", "Введите текст…",
+    )
+
+    /** Языки собеседника: русский исключён, турецкий и остальные языки доступны для выбора. */
     val FOREIGN = listOf(
+        TURKISH,
         Lang(
             "en", "Английский", "English", Locale.forLanguageTag("en-US"), "Hello, where is passport control?",
             "Sorry, there was an interruption. Could you please repeat that?", "Введите текст…",
@@ -81,10 +87,6 @@ object Languages {
         Lang(
             "pt", "Португальский", "Português", Locale.forLanguageTag("pt-BR"), "Olá, onde fica o controle de passaportes?",
             "Desculpe, houve uma interrupção. Pode repetir, por favor?", "Введите текст…",
-        ),
-        Lang(
-            "ru", "Русский", "Русский", Locale.forLanguageTag("ru-RU"), "Здравствуйте, где паспортный контроль?",
-            "Извините, произошёл сбой. Не могли бы вы повторить?", "Введите текст…",
         ),
         Lang(
             "id", "Индонезийский", "Bahasa Indonesia", Locale.forLanguageTag("id-ID"), "Halo, di mana pemeriksaan paspor?",
@@ -124,5 +126,5 @@ object Languages {
         ),
     )
 
-    val ALL = listOf(TURKISH) + FOREIGN
+    val ALL = listOf(RUSSIAN) + FOREIGN
 }
