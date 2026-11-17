@@ -354,7 +354,7 @@ private fun Conversation(
         Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text(
                 if (manual) "Нажмите «Старт». Когда говорите вы, удерживайте кнопку «Говорю я», а когда собеседник — «Говорит собеседник»."
-                else "Нажмите «Старт». Речь собеседника будет переведена на турецкий и воспроизведена в наушниках, а ваш перевод прозвучит через динамик. Язык приложение определяет автоматически.",
+                else "Нажмите «Старт». Речь собеседника будет переведена на русский и воспроизведена в наушниках, а ваш перевод прозвучит через динамик. Язык приложение определяет автоматически.",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -505,7 +505,7 @@ private fun TextBar(vm: ConversationViewModel, status: EngineStatus) {
     val partner = Languages.FOREIGN.firstOrNull { it.code == status.partnerLang }
     val enabled = who == Speaker.USER || partner != null
     val hint = when {
-        who == Speaker.USER -> Languages.TURKISH.typeHint
+        who == Speaker.USER -> Languages.RUSSIAN.typeHint
         partner != null -> partner.typeHint
         else -> "Сначала выберите язык собеседника"
     }
