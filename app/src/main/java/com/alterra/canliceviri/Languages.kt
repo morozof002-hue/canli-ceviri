@@ -44,83 +44,83 @@ private val GLOSSARY = mapOf(
 
 object Languages {
     val TURKISH = Lang(
-        "tr", "Türkçe", "Türkçe", Locale.forLanguageTag("tr-TR"), "Merhaba, pasaport kontrolü nerede?",
-        "Bir kesinti oldu, lütfen tekrar söyler misiniz?", "Türkçe yazın…",
+        "tr", "Турецкий", "Турецкий", Locale.forLanguageTag("tr-TR"), "Merhaba, pasaport kontrolü nerede?",
+        "Bir kesinti oldu, lütfen tekrar söyler misiniz?", "Введите текст…",
     )
 
     /** Dünyada en çok konuşulan 10 dil + Avrupa ve Doğu Asya'dan 8 dil. */
     val FOREIGN = listOf(
         Lang(
-            "en", "İngilizce", "English", Locale.forLanguageTag("en-US"), "Hello, where is passport control?",
-            "Sorry, there was an interruption. Could you please repeat that?", "Type here…",
+            "en", "Английский", "English", Locale.forLanguageTag("en-US"), "Hello, where is passport control?",
+            "Sorry, there was an interruption. Could you please repeat that?", "Введите текст…",
         ),
         Lang(
-            "zh", "Çince", "中文", Locale.forLanguageTag("zh-CN"), "你好，护照检查在哪里？",
-            "抱歉，刚才有干扰，请再说一遍好吗？", "请在此输入…",
+            "zh", "Китайский", "中文", Locale.forLanguageTag("zh-CN"), "你好，护照检查在哪里？",
+            "抱歉，刚才有干扰，请再说一遍好吗？", "Введите текст…",
         ),
         Lang(
-            "hi", "Hintçe", "हिन्दी", Locale.forLanguageTag("hi-IN"), "नमस्ते, पासपोर्ट जांच कहाँ है?",
-            "माफ़ कीजिए, बीच में रुकावट आ गई। क्या आप दोबारा कह सकते हैं?", "यहाँ लिखें…",
+            "hi", "Хинди", "हिन्दी", Locale.forLanguageTag("hi-IN"), "नमस्ते, पासपोर्ट जांच कहाँ है?",
+            "माफ़ कीजिए, बीच में रुकावट आ गई। क्या आप दोबारा कह सकते हैं?", "Введите текст…",
         ),
         Lang(
-            "es", "İspanyolca", "Español", Locale.forLanguageTag("es-ES"), "Hola, ¿dónde está el control de pasaportes?",
-            "Perdón, hubo una interrupción. ¿Podría repetirlo, por favor?", "Escriba aquí…",
+            "es", "Испанский", "Español", Locale.forLanguageTag("es-ES"), "Hola, ¿dónde está el control de pasaportes?",
+            "Perdón, hubo una interrupción. ¿Podría repetirlo, por favor?", "Введите текст…",
         ),
         Lang(
-            "ar", "Arapça", "العربية", Locale.forLanguageTag("ar"), "مرحبا، أين مراقبة الجوازات؟",
-            "عذرًا، حدث انقطاع. هل يمكنك التكرار من فضلك؟", "اكتب هنا…",
+            "ar", "Арабский", "العربية", Locale.forLanguageTag("ar"), "مرحبا، أين مراقبة الجوازات؟",
+            "عذرًا، حدث انقطاع. هل يمكنك التكرار من فضلك؟", "Введите текст…",
         ),
         Lang(
-            "fr", "Fransızca", "Français", Locale.forLanguageTag("fr-FR"), "Bonjour, où se trouve le contrôle des passeports ?",
-            "Pardon, il y a eu une interruption. Pouvez-vous répéter, s'il vous plaît ?", "Écrivez ici…",
+            "fr", "Французский", "Français", Locale.forLanguageTag("fr-FR"), "Bonjour, où se trouve le contrôle des passeports ?",
+            "Pardon, il y a eu une interruption. Pouvez-vous répéter, s'il vous plaît ?", "Введите текст…",
         ),
         Lang(
-            "bn", "Bengalce", "বাংলা", Locale.forLanguageTag("bn-BD"), "হ্যালো, পাসপোর্ট চেক কোথায়?",
-            "দুঃখিত, একটু বাধা পড়েছিল। আবার বলবেন কি?", "এখানে লিখুন…",
+            "bn", "Бенгальский", "বাংলা", Locale.forLanguageTag("bn-BD"), "হ্যালো, পাসপোর্ট চেক কোথায়?",
+            "দুঃখিত, একটু বাধা পড়েছিল। আবার বলবেন কি?", "Введите текст…",
         ),
         Lang(
-            "pt", "Portekizce", "Português", Locale.forLanguageTag("pt-BR"), "Olá, onde fica o controle de passaportes?",
-            "Desculpe, houve uma interrupção. Pode repetir, por favor?", "Escreva aqui…",
+            "pt", "Португальский", "Português", Locale.forLanguageTag("pt-BR"), "Olá, onde fica o controle de passaportes?",
+            "Desculpe, houve uma interrupção. Pode repetir, por favor?", "Введите текст…",
         ),
         Lang(
-            "ru", "Rusça", "Русский", Locale.forLanguageTag("ru-RU"), "Здравствуйте, где паспортный контроль?",
-            "Извините, произошёл сбой. Не могли бы вы повторить?", "Напишите здесь…",
+            "ru", "Русский", "Русский", Locale.forLanguageTag("ru-RU"), "Здравствуйте, где паспортный контроль?",
+            "Извините, произошёл сбой. Не могли бы вы повторить?", "Введите текст…",
         ),
         Lang(
-            "id", "Endonezce", "Bahasa Indonesia", Locale.forLanguageTag("id-ID"), "Halo, di mana pemeriksaan paspor?",
-            "Maaf, tadi ada gangguan. Bisa diulangi?", "Ketik di sini…",
+            "id", "Индонезийский", "Bahasa Indonesia", Locale.forLanguageTag("id-ID"), "Halo, di mana pemeriksaan paspor?",
+            "Maaf, tadi ada gangguan. Bisa diulangi?", "Введите текст…",
         ),
         Lang(
-            "de", "Almanca", "Deutsch", Locale.forLanguageTag("de-DE"), "Hallo, wo ist die Passkontrolle?",
-            "Entschuldigung, es gab eine Unterbrechung. Könnten Sie das bitte wiederholen?", "Hier schreiben…",
+            "de", "Немецкий", "Deutsch", Locale.forLanguageTag("de-DE"), "Hallo, wo ist die Passkontrolle?",
+            "Entschuldigung, es gab eine Unterbrechung. Könnten Sie das bitte wiederholen?", "Введите текст…",
         ),
         Lang(
-            "it", "İtalyanca", "Italiano", Locale.forLanguageTag("it-IT"), "Buongiorno, dov'è il controllo passaporti?",
-            "Scusi, c'è stata un'interruzione. Potrebbe ripetere, per favore?", "Scriva qui…",
+            "it", "Итальянский", "Italiano", Locale.forLanguageTag("it-IT"), "Buongiorno, dov'è il controllo passaporti?",
+            "Scusi, c'è stata un'interruzione. Potrebbe ripetere, per favore?", "Введите текст…",
         ),
         Lang(
-            "nl", "Hollandaca", "Nederlands", Locale.forLanguageTag("nl-NL"), "Hallo, waar is de paspoortcontrole?",
-            "Sorry, er was een onderbreking. Kunt u dat herhalen, alstublieft?", "Typ hier…",
+            "nl", "Нидерландский", "Nederlands", Locale.forLanguageTag("nl-NL"), "Hallo, waar is de paspoortcontrole?",
+            "Sorry, er was een onderbreking. Kunt u dat herhalen, alstublieft?", "Введите текст…",
         ),
         Lang(
-            "pl", "Lehçe", "Polski", Locale.forLanguageTag("pl-PL"), "Dzień dobry, gdzie jest kontrola paszportowa?",
-            "Przepraszam, nastąpiła przerwa. Czy mogliby państwo powtórzyć?", "Wpisz tutaj…",
+            "pl", "Польский", "Polski", Locale.forLanguageTag("pl-PL"), "Dzień dobry, gdzie jest kontrola paszportowa?",
+            "Przepraszam, nastąpiła przerwa. Czy mogliby państwo powtórzyć?", "Введите текст…",
         ),
         Lang(
-            "cs", "Çekçe", "Čeština", Locale.forLanguageTag("cs-CZ"), "Dobrý den, kde je pasová kontrola?",
-            "Promiňte, došlo k přerušení. Mohli byste to prosím zopakovat?", "Pište sem…",
+            "cs", "Чешский", "Čeština", Locale.forLanguageTag("cs-CZ"), "Dobrý den, kde je pasová kontrola?",
+            "Promiňte, došlo k přerušení. Mohli byste to prosím zopakovat?", "Введите текст…",
         ),
         Lang(
-            "uk", "Ukraynaca", "Українська", Locale.forLanguageTag("uk-UA"), "Добрий день, де паспортний контроль?",
+            "uk", "Украинский", "Українська", Locale.forLanguageTag("uk-UA"), "Добрий день, де паспортний контроль?",
             "Вибачте, стався збій. Чи не могли б ви повторити?", "Напишіть тут…",
         ),
         Lang(
-            "ja", "Japonca", "日本語", Locale.forLanguageTag("ja-JP"), "こんにちは、パスポート検査はどこですか？",
-            "すみません、途中で中断しました。もう一度言っていただけますか？", "ここに入力…",
+            "ja", "Японский", "日本語", Locale.forLanguageTag("ja-JP"), "こんにちは、パスポート検査はどこですか？",
+            "すみません、途中で中断しました。もう一度言っていただけますか？", "Введите текст…",
         ),
         Lang(
-            "ko", "Korece", "한국어", Locale.forLanguageTag("ko-KR"), "안녕하세요, 여권 심사는 어디인가요?",
-            "죄송합니다, 중간에 끊겼습니다. 다시 한 번 말씀해 주시겠어요?", "여기에 입력…",
+            "ko", "Корейский", "한국어", Locale.forLanguageTag("ko-KR"), "안녕하세요, 여권 심사는 어디인가요?",
+            "죄송합니다, 중간에 끊겼습니다. 다시 한 번 말씀해 주시겠어요?", "Введите текст…",
         ),
     )
 
