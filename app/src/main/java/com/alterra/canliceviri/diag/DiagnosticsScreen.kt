@@ -69,9 +69,9 @@ fun DiagnosticsScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (onBack != null) TextButton(onClick = onBack) { Text("← Çeviriye dön") }
+            if (onBack != null) TextButton(onClick = onBack) { Text("← Вернуться к переводу") }
             Column {
-                Text("Canlı Çeviri", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("Живой перевод", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 Text(
                     "Cihaz testi · ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.bodyMedium,
@@ -79,12 +79,12 @@ fun DiagnosticsScreen(
                 )
             }
             if (!vm.hasPermission) {
-                Section("Mikrofon izni gerekli", "Testler mikrofonu kullanıyor.") {
-                    Button(onClick = onRequestPermission) { Text("İzin ver") }
+                Section("Требуется доступ к микрофону", "Для проверки используется микрофон.") {
+                    Button(onClick = onRequestPermission) { Text("Разрешить") }
                 }
             }
             if (vm.benchLog.isNotEmpty()) {
-                Section("Geliştirici · ASR testi") {
+                Section("Для разработчиков · тест распознавания речи") {
                     vm.benchLog.forEach {
                         Text(it, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
                     }
@@ -107,35 +107,35 @@ fun DiagnosticsScreen(
 @Composable
 private fun OneTapCard(vm: DiagnosticsViewModel, onShareText: (String) -> Unit) {
     Section(
-        "Tek düğmeyle test",
-        "Kulaklığı takın, telefonun medya sesini orta seviyeye getirin ve telefonu masaya bırakın. " +
-            "Yaklaşık 1 dakika sürer: kısa bipler ve iki cümle duyacaksınız, konuşmanız gerekmez. Bitince raporu gönderin.",
+        "Комплексная проверка одной кнопкой",
+        "Подключите наушники, установите среднюю громкость мультимедиа и положите телефон на стол. " +
+            "Проверка займёт около минуты: вы услышите короткие сигналы и две фразы. Говорить не нужно. По завершении отправьте отчёт.",
     ) {
         Button(
             onClick = vm::runAll,
             enabled = !vm.busy && vm.hasPermission,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(if (vm.allRunning) "Test sürüyor…" else "Hepsini test et") }
+        ) { Text(if (vm.allRunning) "Проверка выполняется…" else "Hepsini test et") }
         if (vm.allDone && !vm.busy) {
-            Button(onClick = { onShareText(vm.buildReport()) }, modifier = Modifier.fillMaxWidth()) { Text("Raporu gönder") }
+            Button(onClick = { onShareText(vm.buildReport()) }, modifier = Modifier.fillMaxWidth()) { Text("Отправить отчёт") }
         }
     }
 }
 
 @Composable
 private fun SummaryCard(vm: DiagnosticsViewModel) {
-    Section("Özet") {
-        SummaryRow("İki mikrofon aynı anda", vm.dual.verdict)
-        SummaryRow("Kulaklık takılıyken hoparlör", vm.output.sequential)
-        SummaryRow("Aynı anda iki çıkış (ek)", vm.output.simultaneous)
-        SummaryRow("Sesli okuma yönlendirme", vm.ttsState.verdict)
+    Section("Сводка") {
+        SummaryRow("Одновременная работа двух микрофонов", vm.dual.verdict)
+        SummaryRow("Динамик при подключённых наушниках", vm.output.sequential)
+        SummaryRow("Два аудиовыхода одновременно (дополнительно)", vm.output.simultaneous)
+        SummaryRow("Вывод озвучивания", vm.ttsState.verdict)
         if (vm.scan.pairVerdict != null) SummaryRow("Tarama: iki mikrofon", vm.scan.pairVerdict)
         if (vm.scan.stereoVerdict != null) SummaryRow("Tarama: telefon stereo", vm.scan.stereoVerdict)
         val statuses = vm.ttsState.statuses
         if (statuses.isNotEmpty()) {
             val ready = statuses.count { it.state == TtsEngine.State.READY }
             Text(
-                "İnternetsiz sesli okuma: $ready/${statuses.size} dil hazır",
+                "Офлайн-озвучивание: готово языков — $ready из ${statuses.size}",
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -147,25 +147,25 @@ private fun DualMicCard(vm: DiagnosticsViewModel, onShareFiles: (List<File>) -> 
     val d = vm.dual
     val running = vm.busy && d.phase != DualPhase.IDLE && d.phase != DualPhase.DONE
     Section(
-        "1 · İki mikrofon aynı anda",
-        "Kulaklığın mikrofonu (A) ve telefonun mikrofonu (B) aynı anda, ayrı ayrı dinlenebiliyor mu?",
+        "1 · Одновременная работа двух микрофонов",
+        "Могут ли микрофон наушников (A) и микрофон телефона (B) одновременно записывать звук раздельно?",
     ) {
         Picker(
-            label = "A · Kulaklık mikrofonu",
+            label = "A · Микрофон наушников",
             items = vm.mics,
             selected = vm.mics.firstOrNull { it.id == vm.selectedA },
             itemLabel = { AudioDevices.describe(it) },
             enabled = !vm.busy,
         ) { vm.selectedA = it.id }
         Picker(
-            label = "B · Telefon mikrofonu",
+            label = "B · Микрофон телефона",
             items = vm.mics,
             selected = vm.mics.firstOrNull { it.id == vm.selectedB },
             itemLabel = { AudioDevices.describe(it) },
             enabled = !vm.busy,
         ) { vm.selectedB = it.id }
         Picker(
-            label = "Kayıt türü",
+            label = "Источник записи",
             items = AUDIO_SOURCES,
             selected = AUDIO_SOURCES.firstOrNull { it.first == vm.source },
             itemLabel = { it.second },
@@ -177,11 +177,11 @@ private fun DualMicCard(vm: DiagnosticsViewModel, onShareFiles: (List<File>) -> 
         if (running || d.phase == DualPhase.DONE && d.levelA > Dsp.FLOOR_DB) {
             LevelBar("A 🎧", d.levelA, MaterialTheme.colorScheme.primary)
             LevelBar("B 📱", d.levelB, MaterialTheme.colorScheme.tertiary)
-            Text("Sistemin bağladığı · A: ${d.routedA}", style = MaterialTheme.typography.bodySmall)
-            Text("Sistemin bağladığı · B: ${d.routedB}", style = MaterialTheme.typography.bodySmall)
+            Text("Подключено системой · A: ${d.routedA}", style = MaterialTheme.typography.bodySmall)
+            Text("Подключено системой · B: ${d.routedB}", style = MaterialTheme.typography.bodySmall)
             if (d.silencedA == true || d.silencedB == true) {
                 Text(
-                    "⚠️ Sistem susturdu · A: ${d.silencedA} · B: ${d.silencedB}",
+                    "⚠️ Система отключила звук · A: ${d.silencedA} · B: ${d.silencedB}",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -190,36 +190,36 @@ private fun DualMicCard(vm: DiagnosticsViewModel, onShareFiles: (List<File>) -> 
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (running) {
-                Button(onClick = vm::stopTest) { Text("Durdur") }
+                Button(onClick = vm::stopTest) { Text("Остановить") }
             } else {
-                Button(onClick = vm::startDualTest, enabled = !vm.busy && vm.hasPermission) { Text("Testi başlat (18 sn)") }
-                OutlinedButton(onClick = vm::startLive, enabled = !vm.busy && vm.hasPermission) { Text("Canlı dinle") }
+                Button(onClick = vm::startDualTest, enabled = !vm.busy && vm.hasPermission) { Text("Начать проверку (18 сек.)") }
+                OutlinedButton(onClick = vm::startLive, enabled = !vm.busy && vm.hasPermission) { Text("Слушать в реальном времени") }
             }
         }
         VerdictView(d.verdict)
         if (d.detail.isNotEmpty()) Detail(d.detail)
         if (d.recordings.isNotEmpty() && !vm.busy) {
-            TextButton(onClick = { onShareFiles(d.recordings) }) { Text("Kayıtları paylaş (2 WAV)") }
+            TextButton(onClick = { onShareFiles(d.recordings) }) { Text("Поделиться записями (2 WAV)") }
         }
 
         HorizontalDivider()
         val sc = vm.scan
-        Text("Otomatik tarama", style = MaterialTheme.typography.labelLarge)
+        Text("Автоматическое сканирование", style = MaterialTheme.typography.labelLarge)
         Detail(
-            "Konuşmanız gerekmez, yaklaşık 40 sn sürer. Her kayıt türü eşleşmesini dener ve iki mikrofonun hangisinde " +
-                "gerçekten ayrı açıldığını bulur. Telefonun kendi mikrofonlarından stereo kayıt da denenir."
+            "Говорить не нужно, проверка займёт около 40 секунд. Она проверит сочетания источников записи и определит, при каком варианте два микрофона " +
+                "действительно работают раздельно. Также проверяется стереозапись встроенными микрофонами телефона."
         )
         if (sc.step.isNotEmpty()) {
             Text(sc.step, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         }
-        OutlinedButton(onClick = vm::startScan, enabled = !vm.busy && vm.hasPermission) { Text("Taramayı başlat") }
+        OutlinedButton(onClick = vm::startScan, enabled = !vm.busy && vm.hasPermission) { Text("Начать сканирование") }
         if (sc.pairVerdict != null) {
-            Text("İki mikrofon", style = MaterialTheme.typography.labelMedium)
+            Text("Два микрофона", style = MaterialTheme.typography.labelMedium)
             VerdictView(sc.pairVerdict)
             sc.pairs.forEach { Detail(DiagnosticsViewModel.pairLine(it)) }
         }
         if (sc.stereoVerdict != null) {
-            Text("Telefonun kendi mikrofonları (stereo)", style = MaterialTheme.typography.labelMedium)
+            Text("Встроенные микрофоны телефона (стерео)", style = MaterialTheme.typography.labelMedium)
             VerdictView(sc.stereoVerdict)
             sc.stereo.forEach { Detail(DiagnosticsViewModel.stereoLine(it)) }
         }
@@ -230,17 +230,17 @@ private fun DualMicCard(vm: DiagnosticsViewModel, onShareFiles: (List<File>) -> 
 private fun Instruction(phase: DualPhase, seconds: Int) {
     val (text, strong) = when (phase) {
         DualPhase.IDLE, DualPhase.DONE ->
-            "Mikrofonlu kulaklığı takın ve sessiz bir yerde başlatın. Test 2 aşamalı, toplam 18 saniye." to false
+            "Подключите гарнитуру с микрофоном и запустите проверку в тихом месте. Тест состоит из двух этапов и длится 18 секунд." to false
         DualPhase.LIVE ->
-            "Canlı: önce kulaklığın mikrofonuna, sonra telefonun alt ucuna konuşun. Hangi çubuğun oynadığına bakın." to false
+            "В реальном времени: сначала говорите в микрофон наушников, затем — в нижний торец телефона. Следите, какой индикатор реагирует." to false
         DualPhase.PREP_HEADSET ->
-            "Hazırlanın… $seconds\nSıradaki: telefonu masaya bırakın ya da kolunuzu uzatıp uzakta tutun. Kulaklığın mikrofonuna konuşacaksınız." to true
+            "Приготовьтесь… $seconds\nДалее: положите телефон на стол или держите его на вытянутой руке. Нужно будет говорить в микрофон наушников." to true
         DualPhase.REC_HEADSET ->
-            "🎧 Şimdi KULAKLIĞIN mikrofonuna konuşun (1'den 10'a sayın) · $seconds" to true
+            "🎧 Сейчас говорите в МИКРОФОН НАУШНИКОВ (считайте от 1 до 10) · $seconds" to true
         DualPhase.PREP_PHONE ->
-            "Hazırlanın… $seconds\nSıradaki: kulaklığın mikrofonunu avucunuzla kapatın ya da uzaklaştırın. Telefonun alt ucuna konuşacaksınız." to true
+            "Приготовьтесь… $seconds\nДалее: закройте микрофон наушников ладонью или отодвиньте его. Нужно будет говорить в нижний торец телефона." to true
         DualPhase.REC_PHONE ->
-            "📱 Şimdi TELEFONUN alt ucuna konuşun (1'den 10'a sayın) · $seconds" to true
+            "📱 Сейчас говорите в НИЖНИЙ МИКРОФОН ТЕЛЕФОНА (считайте от 1 до 10) · $seconds" to true
     }
     if (strong) {
         Box(
@@ -266,24 +266,24 @@ private fun Instruction(phase: DualPhase, seconds: Int) {
 private fun OutputCard(vm: DiagnosticsViewModel) {
     val o = vm.output
     Section(
-        "2 · Kulaklık takılıyken hoparlör",
-        "Türkçe kulaklıktan, yabancı dil telefon hoparlöründen çıkacak. Telefonun mikrofonu bipleri dinleyip sonucu kendisi ölçer.",
+        "2 · Динамик при подключённых наушниках",
+        "Турецкая речь должна звучать в наушниках, иностранная — через динамик телефона. Микрофон телефона прослушает сигналы и автоматически оценит результат.",
     ) {
         Text(
-            "Kulaklığı takın, telefonun medya sesini orta seviyeye getirin. Kısa bipler duyacaksınız.",
+            "Подключите наушники и установите среднюю громкость мультимедиа. Вы услышите короткие сигналы.",
             style = MaterialTheme.typography.bodyMedium,
         )
         if (o.step.isNotEmpty()) {
             Text(o.step, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { vm.startOutputTest(false) }, enabled = !vm.busy && vm.hasPermission) { Text("Sırayla test et") }
-            OutlinedButton(onClick = { vm.startOutputTest(true) }, enabled = !vm.busy && vm.hasPermission) { Text("Aynı anda") }
+            Button(onClick = { vm.startOutputTest(false) }, enabled = !vm.busy && vm.hasPermission) { Text("Проверить по очереди") }
+            OutlinedButton(onClick = { vm.startOutputTest(true) }, enabled = !vm.busy && vm.hasPermission) { Text("Одновременно") }
         }
-        Text("Sırayla", style = MaterialTheme.typography.labelLarge)
+        Text("По очереди", style = MaterialTheme.typography.labelLarge)
         VerdictView(o.sequential)
         if (o.sequentialDetail.isNotEmpty()) Detail(o.sequentialDetail)
-        Text("Aynı anda (ek)", style = MaterialTheme.typography.labelLarge)
+        Text("Одновременно (дополнительно)", style = MaterialTheme.typography.labelLarge)
         VerdictView(o.simultaneous)
         if (o.simultaneousDetail.isNotEmpty()) Detail(o.simultaneousDetail)
     }
@@ -293,17 +293,17 @@ private fun OutputCard(vm: DiagnosticsViewModel) {
 private fun TtsCard(vm: DiagnosticsViewModel, onOpenTtsSettings: () -> Unit, onInstallTtsData: (String?) -> Unit) {
     val t = vm.ttsState
     Section(
-        "3 · Sesli okuma (TTS)",
-        "Telefonun seslendirme motoru her dili internetsiz okuyabiliyor mu, ses doğru yere gidiyor mu?",
+        "3 · Озвучивание текста (TTS)",
+        "Может ли голосовой движок телефона озвучивать каждый язык без интернета и правильно ли направляется звук?",
     ) {
         Picker(
-            label = "Seslendirme motoru",
+            label = "Голосовой движок",
             items = t.engines,
             selected = t.engines.firstOrNull { it.packageName == t.engine },
             itemLabel = { "${it.label} (${it.packageName})" },
             enabled = !vm.busy,
         ) { vm.initTts(it.packageName) }
-        if (!t.ready) Text("Motor hazırlanıyor…", style = MaterialTheme.typography.bodyMedium)
+        if (!t.ready) Text("Подготовка движка…", style = MaterialTheme.typography.bodyMedium)
         t.statuses.forEach { s ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stateEmoji(s.state), modifier = Modifier.width(28.dp))
@@ -312,18 +312,18 @@ private fun TtsCard(vm: DiagnosticsViewModel, onOpenTtsSettings: () -> Unit, onI
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            TextButton(onClick = onOpenTtsSettings) { Text("Ses ayarları") }
-            TextButton(onClick = { onInstallTtsData(t.engine) }) { Text("Ses verisi indir") }
-            TextButton(onClick = vm::refreshTtsStatuses) { Text("Yenile") }
+            TextButton(onClick = onOpenTtsSettings) { Text("Настройки голоса") }
+            TextButton(onClick = { onInstallTtsData(t.engine) }) { Text("Скачать голосовые данные") }
+            TextButton(onClick = vm::refreshTtsStatuses) { Text("Обновить") }
         }
         HorizontalDivider()
         Button(
             onClick = { vm.speakTest(toHeadset = true) },
             enabled = !vm.busy && t.ready,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("🎧 Türkçe → kulaklık") }
+        ) { Text("🎧 Турецкий → наушники") }
         Picker(
-            label = "Yabancı dil",
+            label = "Иностранный язык",
             items = Languages.FOREIGN,
             selected = t.selected,
             itemLabel = { "${it.nameTr} · ${it.nativeName}" },
@@ -333,7 +333,7 @@ private fun TtsCard(vm: DiagnosticsViewModel, onOpenTtsSettings: () -> Unit, onI
             onClick = { vm.speakTest(toHeadset = false) },
             enabled = !vm.busy && t.ready,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("🔊 ${t.selected.nameTr} → hoparlör") }
+        ) { Text("🔊 ${t.selected.nameTr} → динамик") }
         t.headsetResult?.let { Detail(it) }
         t.speakerResult?.let { Detail(it) }
         VerdictView(t.verdict)
@@ -342,13 +342,13 @@ private fun TtsCard(vm: DiagnosticsViewModel, onOpenTtsSettings: () -> Unit, onI
 
 @Composable
 private fun DevicesCard(vm: DiagnosticsViewModel) {
-    Section("Ses cihazları", vm.deviceSummary) {
-        Text("Girişler", style = MaterialTheme.typography.labelLarge)
+    Section("Аудиоустройства", vm.deviceSummary) {
+        Text("Устройства ввода", style = MaterialTheme.typography.labelLarge)
         vm.inputs.forEach { Detail("• ${AudioDevices.describe(it)}") }
-        Text("Çıkışlar", style = MaterialTheme.typography.labelLarge)
+        Text("Устройства вывода", style = MaterialTheme.typography.labelLarge)
         vm.outputs.forEach { Detail("• ${AudioDevices.describe(it)}") }
         if (vm.microphones.isNotEmpty()) {
-            Text("Fiziksel mikrofonlar (${vm.microphones.size})", style = MaterialTheme.typography.labelLarge)
+            Text("Физические микрофоны (${vm.microphones.size})", style = MaterialTheme.typography.labelLarge)
             vm.microphones.forEach { Detail("• $it") }
         }
     }
@@ -356,13 +356,13 @@ private fun DevicesCard(vm: DiagnosticsViewModel) {
 
 @Composable
 private fun ReportCard(vm: DiagnosticsViewModel, onShareText: (String) -> Unit, onCopyText: (String) -> Unit) {
-    Section("Rapor", "Sonuçları göndermek için paylaşın ya da kopyalayın.") {
+    Section("Отчёт", "Чтобы отправить результаты, поделитесь ими или скопируйте.") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { onShareText(vm.buildReport()) }) { Text("Raporu paylaş") }
-            OutlinedButton(onClick = { onCopyText(vm.buildReport()) }) { Text("Kopyala") }
+            Button(onClick = { onShareText(vm.buildReport()) }) { Text("Поделиться отчётом") }
+            OutlinedButton(onClick = { onCopyText(vm.buildReport()) }) { Text("Копировать") }
         }
         if (vm.log.isNotEmpty()) {
-            Text("Günlük", style = MaterialTheme.typography.labelLarge)
+            Text("Журнал", style = MaterialTheme.typography.labelLarge)
             vm.log.takeLast(12).forEach {
                 Text(it, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
             }
@@ -420,7 +420,7 @@ private fun stateEmoji(s: TtsEngine.State) = when (s) {
 @Composable
 private fun VerdictView(v: Verdict?) {
     if (v == null) {
-        Text("Henüz denenmedi", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("Ещё не проверено", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         return
     }
     Row {
@@ -484,7 +484,7 @@ private fun <T> Picker(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    selected?.let(itemLabel) ?: "Seçilmedi",
+                    selected?.let(itemLabel) ?: "Не выбрано",
                     modifier = Modifier.weight(1f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
