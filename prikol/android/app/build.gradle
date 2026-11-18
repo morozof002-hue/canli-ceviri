@@ -10,8 +10,8 @@ android {
         applicationId 'ru.prikol.snake'
         minSdk 23
         targetSdk 35
-        versionCode 1
-        versionName '1.0'
+        versionCode 2
+        versionName '1.1'
     }
 
     // Give the generated debug APK a short, predictable filename.
