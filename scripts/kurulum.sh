@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # HUAN: only whisper.cpp is required for local speech recognition.
 set -e
 cd "$(dirname "$0")/.."
