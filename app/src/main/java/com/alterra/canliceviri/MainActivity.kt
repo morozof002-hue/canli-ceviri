@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -185,8 +186,9 @@ private fun HuanHome(
     var manualSourceIsFirst by remember { mutableStateOf(true) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF4F6FA)) {
+        SelectionContainer {
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp),
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -366,11 +368,11 @@ private fun HuanHome(
 
             Spacer(Modifier.height(10.dp))
             Card(
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 260.dp),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+                Column(modifier = Modifier.fillMaxWidth().padding(18.dp)) {
                     Text("ВЫ СКАЗАЛИ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.5.sp)
                     Spacer(Modifier.height(8.dp))
                     Text(speechState.sourceText.ifBlank { "Распознанная речь или введённый текст появится здесь." }, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 23.sp)
@@ -384,7 +386,7 @@ private fun HuanHome(
                     if (speechState.translatedText.isNotBlank()) {
                         TextButton(onClick = { onCopyText(speechState.translatedText) }) { Text("Копировать перевод") }
                     }
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.height(12.dp))
                     OutlinedButton(
                         onClick = { activeLanguage = null; onClear() },
                         modifier = Modifier.fillMaxWidth()
@@ -399,6 +401,7 @@ private fun HuanHome(
                 color = Color(0xFF667085),
                 textAlign = TextAlign.Center
             )
+        }
         }
     }
 
