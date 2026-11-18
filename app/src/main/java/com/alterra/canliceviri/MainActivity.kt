@@ -319,7 +319,7 @@ private fun LanguageCard(
                 awaitFirstDown(requireUnconsumed = false)
                 onPressStart()
                 try {
-                    waitForUpOrCancellation(requireUnconsumed = false)
+                    waitForUpOrCancellation()
                 } finally {
                     onPressEnd()
                 }
