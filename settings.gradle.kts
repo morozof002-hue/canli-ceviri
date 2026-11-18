@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CanliCeviri"
+rootProject.name = "HUAN"
 include(":app")
-include(":llm")
