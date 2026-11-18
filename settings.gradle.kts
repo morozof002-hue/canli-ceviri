@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "HUAN"
 include(":app")
+include(":llm")
