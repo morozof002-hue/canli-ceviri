@@ -66,14 +66,30 @@ button:active{transform:translateY(2px);box-shadow:0 1px 0 #8e8e82}
   if(!audioCtx)return;
   if(audioCtx.state==='suspended')audioCtx.resume();
   const now=audioCtx.currentTime;
-  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
-  osc.type='triangle';filter.type='lowpass';
-  filter.frequency.setValueAtTime(520,now);filter.frequency.exponentialRampToValueAtTime(180,now+0.32);
-  osc.frequency.setValueAtTime(260,now);osc.frequency.exponentialRampToValueAtTime(105,now+0.18);
-  osc.frequency.setValueAtTime(145,now+0.2);osc.frequency.exponentialRampToValueAtTime(75,now+0.38);
-  gain.gain.setValueAtTime(0.0001,now);gain.gain.exponentialRampToValueAtTime(0.10,now+0.035);
-  gain.gain.setValueAtTime(0.07,now+0.19);gain.gain.exponentialRampToValueAtTime(0.0001,now+0.42);
-  osc.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+0.44);
+  // Playful, breathy cartoon "ah!" made with formant-like tones and soft breath noise.
+  const voice=audioCtx.createOscillator(),voiceGain=audioCtx.createGain();
+  const formant1=audioCtx.createBiquadFilter(),formant2=audioCtx.createBiquadFilter();
+  voice.type='sawtooth';
+  voice.frequency.setValueAtTime(310,now);
+  voice.frequency.exponentialRampToValueAtTime(430,now+0.16);
+  voice.frequency.exponentialRampToValueAtTime(245,now+0.48);
+  formant1.type='bandpass';formant1.frequency.setValueAtTime(850,now);formant1.Q.value=1.1;
+  formant2.type='peaking';formant2.frequency.setValueAtTime(1450,now);formant2.Q.value=0.8;formant2.gain.value=5;
+  voiceGain.gain.setValueAtTime(0.0001,now);
+  voiceGain.gain.exponentialRampToValueAtTime(0.075,now+0.07);
+  voiceGain.gain.setValueAtTime(0.055,now+0.22);
+  voiceGain.gain.exponentialRampToValueAtTime(0.0001,now+0.55);
+  voice.connect(formant1);formant1.connect(formant2);formant2.connect(voiceGain);voiceGain.connect(audioCtx.destination);
+  voice.start(now);voice.stop(now+0.57);
+  const length=Math.floor(audioCtx.sampleRate*0.52),buffer=audioCtx.createBuffer(1,length,audioCtx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*(1-i/length);
+  const breath=audioCtx.createBufferSource(),breathFilter=audioCtx.createBiquadFilter(),breathGain=audioCtx.createGain();
+  breath.buffer=buffer;breathFilter.type='bandpass';breathFilter.frequency.value=1900;breathFilter.Q.value=0.65;
+  breathGain.gain.setValueAtTime(0.0001,now);breathGain.gain.linearRampToValueAtTime(0.022,now+0.045);
+  breathGain.gain.setValueAtTime(0.014,now+0.24);breathGain.gain.linearRampToValueAtTime(0.0001,now+0.52);
+  breath.connect(breathFilter);breathFilter.connect(breathGain);breathGain.connect(audioCtx.destination);
+  breath.start(now);breath.stop(now+0.53);
  }
 
  const N=20,CELL=16;let snake,dir,nextDir,food,score,timer,running=false,paused=false;
