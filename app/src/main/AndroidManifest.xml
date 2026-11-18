@@ -1,42 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <!-- Yalnızca modelleri ve dil paketlerini bir kez indirmek için -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Ekran kapalıyken de dinlemek için mikrofon türünde ön plan hizmeti ve bildirimi -->
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- Samsung'un "uyuyan uygulama" kısıtı hizmeti öldürmesin diye bir kez sorulur -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-    <uses-feature
-        android:name="android.hardware.microphone"
-        android:required="true" />
-
-    <!-- Android 11+ sistemdeki seslendirme (TTS) motorlarını görebilmek için -->
-    <queries>
-        <intent>
-            <action android:name="android.intent.action.TTS_SERVICE" />
-        </intent>
-        <package android:name="com.google.android.tts" />
-        <!-- Sorun bildirimi WhatsApp'tan gönderiliyor -->
-        <package android:name="com.whatsapp" />
-        <package android:name="com.whatsapp.w4b" />
-    </queries>
-
+    <uses-feature android:name="android.hardware.microphone" android:required="true" />
     <application
-        android:name=".CanliCeviriApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.CanliCeviri">
-
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -46,20 +19,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".TranslationService"
-            android:exported="false"
-            android:foregroundServiceType="microphone" />
-
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.files"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
     </application>
 </manifest>
