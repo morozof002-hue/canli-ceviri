@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -64,6 +65,7 @@ class MainActivity : ComponentActivity() {
         val savedSource = prefs.getString("language_1", "ru") ?: "ru"
         val savedTarget = prefs.getString("language_2", "tr") ?: "tr"
         val savedMode = prefs.getInt("control_mode", 0).coerceIn(0, 2)
+        val savedAutoDetect = prefs.getBoolean("auto_detect", true)
 
         setContent {
             MaterialTheme {
@@ -71,11 +73,13 @@ class MainActivity : ComponentActivity() {
                     initialSource = coreLanguages.firstOrNull { it.code == savedSource } ?: coreLanguages[0],
                     initialTarget = coreLanguages.firstOrNull { it.code == savedTarget } ?: coreLanguages[2],
                     initialMode = savedMode,
-                    onSave = { source, target, mode ->
+                    initialAutoDetect = savedAutoDetect,
+                    onSave = { source, target, mode, autoDetect ->
                         prefs.edit()
                             .putString("language_1", source.code)
                             .putString("language_2", target.code)
                             .putInt("control_mode", mode)
+                            .putBoolean("auto_detect", autoDetect)
                             .apply()
                     },
                     onMicPlaceholder = {
@@ -96,12 +100,14 @@ private fun HuanHome(
     initialSource: HuanLanguage,
     initialTarget: HuanLanguage,
     initialMode: Int,
-    onSave: (HuanLanguage, HuanLanguage, Int) -> Unit,
+    initialAutoDetect: Boolean,
+    onSave: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit,
     onMicPlaceholder: () -> Unit
 ) {
     var source by remember { mutableStateOf(initialSource) }
     var target by remember { mutableStateOf(initialTarget) }
     var mode by remember { mutableStateOf(initialMode) }
+    var autoDetect by remember { mutableStateOf(initialAutoDetect) }
     var settingsOpen by remember { mutableStateOf(false) }
     var historyText by remember { mutableStateOf("Здесь будут отображаться распознанная речь и перевод.") }
 
@@ -193,12 +199,14 @@ private fun HuanHome(
             source = source,
             target = target,
             mode = mode,
+            autoDetect = autoDetect,
             onDismiss = { settingsOpen = false },
-            onApply = { newSource, newTarget, newMode ->
+            onApply = { newSource, newTarget, newMode, newAutoDetect ->
                 source = newSource
                 target = newTarget
                 mode = newMode
-                onSave(newSource, newTarget, newMode)
+                autoDetect = newAutoDetect
+                onSave(newSource, newTarget, newMode, newAutoDetect)
                 settingsOpen = false
             }
         )
@@ -236,12 +244,14 @@ private fun SettingsDialog(
     source: HuanLanguage,
     target: HuanLanguage,
     mode: Int,
+    autoDetect: Boolean,
     onDismiss: () -> Unit,
-    onApply: (HuanLanguage, HuanLanguage, Int) -> Unit
+    onApply: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit
 ) {
     var selectedSource by remember { mutableStateOf(source) }
     var selectedTarget by remember { mutableStateOf(target) }
     var selectedMode by remember { mutableStateOf(mode) }
+    var selectedAutoDetect by remember { mutableStateOf(autoDetect) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -253,6 +263,13 @@ private fun SettingsDialog(
                 Text("Язык 2", fontWeight = FontWeight.Bold)
                 LanguageDropdown(selectedTarget) { selectedTarget = it }
                 Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Автоопределение языка", fontWeight = FontWeight.Bold)
+                        Text("Определять, на каком языке говорят", fontSize = 11.sp, color = Color(0xFF667085))
+                    }
+                    Switch(checked = selectedAutoDetect, onCheckedChange = { selectedAutoDetect = it })
+                }
                 Text("Управление микрофоном", fontWeight = FontWeight.Bold)
                 controlModes.forEachIndexed { index, label ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -268,7 +285,7 @@ private fun SettingsDialog(
                     val safeTarget = if (selectedTarget.code == selectedSource.code) {
                         coreLanguages.first { it.code != selectedSource.code }
                     } else selectedTarget
-                    onApply(selectedSource, safeTarget, selectedMode)
+                    onApply(selectedSource, safeTarget, selectedMode, selectedAutoDetect)
                 }
             ) { Text("Сохранить") }
         },
