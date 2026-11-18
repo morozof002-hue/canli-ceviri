@@ -38,6 +38,13 @@ jobs:
       - name: Prepare native dependencies
         run: bash scripts/kurulum.sh
 
+      # Keep one debug signing key across workflow runs so Android accepts APK updates.
+      - name: Restore stable debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: huan-android-debug-signing-v1
+
       - name: Build APK
         run: |
           chmod +x gradlew
