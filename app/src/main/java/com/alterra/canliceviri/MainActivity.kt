@@ -1,10 +1,12 @@
 package com.alterra.canliceviri
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,8 +15,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.foundation.pointerInput
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -22,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
@@ -30,6 +36,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,10 +45,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 
 private data class HuanLanguage(val code: String, val title: String, val flag: String)
 
@@ -68,12 +78,26 @@ class MainActivity : ComponentActivity() {
         val savedAutoDetect = prefs.getBoolean("auto_detect", true)
 
         setContent {
+            val controller = remember { HuanSpeechController(applicationContext) }
+            val speechState by controller.state.collectAsState()
+            var pendingLanguage by remember { mutableStateOf<String?>(null) }
+            var pendingAutoFinish by remember { mutableStateOf(false) }
+            val permissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                if (granted) controller.startRecording(pendingLanguage, pendingAutoFinish)
+            }
+            DisposableEffect(controller) {
+                onDispose { controller.close() }
+            }
+
             MaterialTheme {
                 HuanHome(
                     initialSource = coreLanguages.firstOrNull { it.code == savedSource } ?: coreLanguages[0],
                     initialTarget = coreLanguages.firstOrNull { it.code == savedTarget } ?: coreLanguages[2],
                     initialMode = savedMode,
                     initialAutoDetect = savedAutoDetect,
+                    speechState = speechState,
                     onSave = { source, target, mode, autoDetect ->
                         prefs.edit()
                             .putString("language_1", source.code)
@@ -82,13 +106,17 @@ class MainActivity : ComponentActivity() {
                             .putBoolean("auto_detect", autoDetect)
                             .apply()
                     },
-                    onMicPlaceholder = {
-                        Toast.makeText(
-                            this,
-                            "Подключение распознавания речи — следующий этап разработки",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
+                    onDownloadModel = controller::downloadModel,
+                    onStart = { language, autoFinish ->
+                        pendingLanguage = language
+                        pendingAutoFinish = autoFinish
+                        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            controller.startRecording(language, autoFinish)
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                    onStop = controller::stopRecording
                 )
             }
         }
@@ -101,15 +129,18 @@ private fun HuanHome(
     initialTarget: HuanLanguage,
     initialMode: Int,
     initialAutoDetect: Boolean,
+    speechState: HuanSpeechState,
     onSave: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit,
-    onMicPlaceholder: () -> Unit
+    onDownloadModel: () -> Unit,
+    onStart: (String?, Boolean) -> Unit,
+    onStop: () -> Unit
 ) {
     var source by remember { mutableStateOf(initialSource) }
     var target by remember { mutableStateOf(initialTarget) }
     var mode by remember { mutableStateOf(initialMode) }
     var autoDetect by remember { mutableStateOf(initialAutoDetect) }
     var settingsOpen by remember { mutableStateOf(false) }
-    var historyText by remember { mutableStateOf("Здесь будут отображаться распознанная речь и перевод.") }
+    var activeLanguage by remember { mutableStateOf<String?>(null) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF4F6FA)) {
         Column(
@@ -130,8 +161,7 @@ private fun HuanHome(
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
-
+            Spacer(Modifier.height(24.dp))
             Text("Выберите, кто говорит", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF17233B))
             Spacer(Modifier.height(14.dp))
 
@@ -141,56 +171,112 @@ private fun HuanHome(
                     number = "ЯЗЫК 1",
                     color = Color(0xFF2457C5),
                     modifier = Modifier.weight(1f),
-                    onClick = onMicPlaceholder
+                    mode = mode,
+                    active = speechState.recording && activeLanguage == source.code,
+                    onClick = {
+                        if (speechState.recording) {
+                            activeLanguage = null
+                            onStop()
+                        } else {
+                            activeLanguage = source.code
+                            onStart(if (autoDetect) null else source.code, mode == 2)
+                        }
+                    },
+                    onPressStart = {
+                        activeLanguage = source.code
+                        onStart(if (autoDetect) null else source.code, false)
+                    },
+                    onPressEnd = {
+                        activeLanguage = null
+                        onStop()
+                    }
                 )
                 LanguageCard(
                     language = target,
                     number = "ЯЗЫК 2",
                     color = Color(0xFF087E65),
                     modifier = Modifier.weight(1f),
-                    onClick = onMicPlaceholder
+                    mode = mode,
+                    active = speechState.recording && activeLanguage == target.code,
+                    onClick = {
+                        if (speechState.recording) {
+                            activeLanguage = null
+                            onStop()
+                        } else {
+                            activeLanguage = target.code
+                            onStart(if (autoDetect) null else target.code, mode == 2)
+                        }
+                    },
+                    onPressStart = {
+                        activeLanguage = target.code
+                        onStart(if (autoDetect) null else target.code, false)
+                    },
+                    onPressEnd = {
+                        activeLanguage = null
+                        onStop()
+                    }
                 )
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
             Text(
-                "Нажмите кнопку нужного языка, чтобы начать разговор",
+                when (mode) {
+                    1 -> "Удерживайте кнопку, пока говорите"
+                    2 -> "Приложение само остановится после паузы"
+                    else -> "Нажмите для начала и повторно для остановки"
+                },
                 fontSize = 12.sp,
                 color = Color(0xFF667085),
                 textAlign = TextAlign.Center
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
+            Text(speechState.status, fontSize = 13.sp, color = Color(0xFF344054), textAlign = TextAlign.Center)
+            if (speechState.downloading) {
+                Spacer(Modifier.height(8.dp))
+                LinearProgressIndicator(progress = { speechState.downloadProgress / 100f }, modifier = Modifier.fillMaxWidth())
+                Text("${speechState.downloadProgress}% · модель Whisper", fontSize = 11.sp, color = Color(0xFF667085))
+            }
+            if (!speechState.modelReady && !speechState.downloading) {
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = onDownloadModel, modifier = Modifier.fillMaxWidth()) {
+                    Text("Скачать модель распознавания (~466 МБ)")
+                }
+            }
+            speechState.error?.let {
+                Spacer(Modifier.height(6.dp))
+                Text(it, color = Color(0xFFB42318), fontSize = 12.sp, textAlign = TextAlign.Center)
+            }
+
+            Spacer(Modifier.height(16.dp))
             Card(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
-                    Text("ПЕРЕВОД", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.5.sp)
-                    Spacer(Modifier.height(12.dp))
-                    Text(historyText, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 24.sp)
+                    Text("ВЫ СКАЗАЛИ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.5.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(speechState.sourceText.ifBlank { "Распознанная речь появится здесь." }, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 23.sp)
+                    Spacer(Modifier.height(16.dp))
+                    Text("ПЕРЕВОД", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF087E65), letterSpacing = 1.5.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text(speechState.translatedText.ifBlank { "Перевод появится здесь и будет произнесён вслух." }, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF17233B), lineHeight = 26.sp)
                     Spacer(Modifier.weight(1f))
                     OutlinedButton(
-                        onClick = { historyText = "Здесь будут отображаться распознанная речь и перевод." },
+                        onClick = { activeLanguage = null },
                         modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Очистить экран")
-                    }
+                    ) { Text("Очистить экран") }
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Режим:", color = Color(0xFF667085), fontSize = 13.sp)
-                Text(
-                    controlModes[mode],
-                    modifier = Modifier.padding(start = 6.dp),
-                    color = Color(0xFF344054),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
+            Spacer(Modifier.height(12.dp))
+            Text(
+                if (speechState.processing) "Обработка на телефоне…" else "Распознавание — локально · Перевод — после загрузки языковых моделей",
+                fontSize = 10.sp,
+                color = Color(0xFF667085),
+                textAlign = TextAlign.Center
+            )
         }
     }
 
@@ -219,13 +305,31 @@ private fun LanguageCard(
     number: String,
     color: Color,
     modifier: Modifier,
-    onClick: () -> Unit
+    mode: Int,
+    active: Boolean,
+    onClick: () -> Unit,
+    onPressStart: () -> Unit,
+    onPressEnd: () -> Unit
 ) {
+    val gestureModifier = if (mode == 1) {
+        Modifier.pointerInput(language.code) {
+            awaitEachGesture {
+                awaitFirstDown()
+                onPressStart()
+                try {
+                    waitForUpOrCancellation()
+                } finally {
+                    onPressEnd()
+                }
+            }
+        }
+    } else Modifier
+
     Button(
-        onClick = onClick,
-        modifier = modifier.height(164.dp),
+        onClick = if (mode == 1) ({}) else onClick,
+        modifier = modifier.height(164.dp).then(gestureModifier),
         shape = RoundedCornerShape(20.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = color),
+        colors = ButtonDefaults.buttonColors(containerColor = if (active) Color(0xFFB54708) else color),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
@@ -234,7 +338,7 @@ private fun LanguageCard(
             Text(language.flag, fontSize = 34.sp)
             Spacer(Modifier.height(7.dp))
             Text(language.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
-            Text("НАЖАТЬ", fontSize = 10.sp, color = Color.White.copy(alpha = 0.8f))
+            Text(if (active) "СЛУШАЮ…" else if (mode == 1) "УДЕРЖИВАТЬ" else "НАЖАТЬ", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
         }
     }
 }
@@ -266,7 +370,7 @@ private fun SettingsDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Автоопределение языка", fontWeight = FontWeight.Bold)
-                        Text("Определять, на каком языке говорят", fontSize = 11.sp, color = Color(0xFF667085))
+                        Text("Распознавать один из выбранных языков автоматически", fontSize = 11.sp, color = Color(0xFF667085))
                     }
                     Switch(checked = selectedAutoDetect, onCheckedChange = { selectedAutoDetect = it })
                 }
