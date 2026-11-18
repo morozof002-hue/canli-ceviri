@@ -20,8 +20,8 @@ set(WHISPER_BUILD_SERVER   OFF CACHE BOOL "" FORCE)
 set(WHISPER_ALL_WARNINGS   OFF CACHE BOOL "" FORCE)
 set(GGML_NATIVE            OFF CACHE BOOL "" FORCE)
 set(GGML_OPENMP            OFF CACHE BOOL "" FORCE)
-# Hedef telefonlar (S24 Ultra, Pixel 9) ARMv9; nokta çarpımı ve int8 matris komutları var.
-set(GGML_CPU_ARM_ARCH "armv8.2-a+dotprod+fp16+i8mm" CACHE STRING "" FORCE)
+# Target a broad ARMv8.2 baseline; avoid requiring optional i8mm on mid-range phones.
+set(GGML_CPU_ARM_ARCH "armv8.2-a+dotprod+fp16" CACHE STRING "" FORCE)
 
 add_subdirectory(${WHISPER_DIR} whisper_build)
 

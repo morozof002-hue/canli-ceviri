@@ -1,11 +1,11 @@
-
-name: Build Android APK
+name: Build HUAN Translator APK
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+      - huan-rebuild
 
 permissions:
   contents: read
@@ -14,7 +14,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +22,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
           cache: gradle
 
       - name: Set up Android SDK
@@ -35,23 +34,17 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865" "cmake;3.31.6"
 
-      - name: Install zsh
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zsh
-
       - name: Prepare native dependencies
-        run: zsh scripts/kurulum.sh
+        run: bash scripts/kurulum.sh
 
       - name: Build APK
         run: |
           chmod +x gradlew
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon clean assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: canli-ceviri-debug-apk
+          name: HUAN-Translator-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 14
-

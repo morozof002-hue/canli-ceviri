@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-/** local.properties'ten (git dışı) değer; yoksa boş. */
 fun localProperty(name: String): String {
     val file = rootProject.file("local.properties")
     if (!file.exists()) return ""
@@ -19,17 +18,14 @@ android {
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
-        applicationId = "com.alterra.canliceviri"
+        applicationId = "com.huan.translator"
         minSdk = 26
         targetSdk = 36
-        versionCode = 13
-        versionName = "0.7.6"
-
-        // Sorun bildiriminin gideceği WhatsApp numarası (ülke koduyla, + olmadan); local.properties'te `rapor.whatsapp=905…`.
-        buildConfigField("String", "RAPOR_WHATSAPP", "\"${localProperty("rapor.whatsapp")}\"")
+        versionCode = 14
+        versionName = "1.0.0"
+        buildConfigField("String", "RAPOR_WHATSAPP", "\"\"")
 
         ndk {
-            // Hedef telefonlar 64-bit ARM; diğer mimariler APK'yı gereksiz büyütür.
             abiFilters += listOf("arm64-v8a")
         }
     }
@@ -41,8 +37,6 @@ android {
         }
     }
 
-    // Müşteriye elden verilen APK: projeye özel anahtar (local.properties: imza.dosya/imza.takma/imza.parola, git dışı).
-    // Anahtar yoksa geliştirme anahtarıyla imzalanır; o APK müşteriye gönderilmemeli (güncelleme uyumsuz olur).
     signingConfigs {
         create("musteri") {
             val file = localProperty("imza.dosya")
@@ -61,7 +55,7 @@ android {
             isShrinkResources = true
             val musteri = signingConfigs.getByName("musteri")
             signingConfig = if (musteri.storeFile != null) musteri else signingConfigs.getByName("debug").also {
-                logger.warn("UYARI: sürüm imza anahtarı yok (local.properties imza.*); geliştirme anahtarıyla imzalanıyor")
+                logger.warn("No release keystore configured; using debug signing")
             }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -90,7 +84,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":llm"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
@@ -101,6 +94,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.kotlinx.coroutines.android)
-
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("com.google.mlkit:translate:17.0.3")
     debugImplementation(libs.androidx.ui.tooling)
 }
