@@ -117,7 +117,7 @@ class HuanSpeechController(context: Context) {
             _state.value = _state.value.copy(error = "Сначала скачайте модель Whisper")
             return
         }
-        recordingJob = scope.launch {
+        recordingJob = scope.launch(Dispatchers.IO) {
             try {
                 _state.value = _state.value.copy(error = null, sourceText = "", translatedText = "", status = "Подготовка микрофона…")
                 val model = withContext(Dispatchers.IO) {
@@ -167,12 +167,18 @@ class HuanSpeechController(context: Context) {
                 _state.value = _state.value.copy(recording = false, processing = true, status = "Распознавание речи…")
                 if (recordingSamples.size < 4_000) error("Слишком короткая запись. Попробуйте ещё раз.")
                 val pcm = FloatArray(recordingSamples.size) { recordingSamples[it] / 32768f }
+                val first = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_1", "ru") ?: "ru"
+                val second = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_2", "tr") ?: "tr"
+                val chosenLanguage = language ?: withContext(Dispatchers.Default) {
+                    model.detectLanguage(pcm, listOf(first, second))?.best?.first
+                }
                 val result = withContext(Dispatchers.Default) {
-                    model.transcribeWithRetry(pcm, language, threads = WhisperModel.DEFAULT_THREADS, maxTokens = 180)
+                    model.transcribeWithRetry(pcm, chosenLanguage, threads = WhisperModel.DEFAULT_THREADS, maxTokens = 180)
                 }
                 if (!result.ok || result.text.isBlank()) error("Не удалось распознать речь. Попробуйте говорить ближе к микрофону.")
                 _state.value = _state.value.copy(sourceText = result.text, status = "Перевод…")
-                val detected = result.lang.ifBlank { language ?: "en" }
+                val detected = result.lang.ifBlank { chosenLanguage ?: first }
+                if (detected != first && detected != second) error("Определён язык вне выбранной пары: $detected")
                 val translated = translate(result.text, detected, targetFor(detected, language))
                 _state.value = _state.value.copy(
                     sourceText = result.text,
