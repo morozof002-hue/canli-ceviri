@@ -7,6 +7,7 @@ on:
       - main
       - huan-rebuild
       - feature/hymt2-translation
+      - feature/tts-controls-stable-signing
 
 permissions:
   contents: read
