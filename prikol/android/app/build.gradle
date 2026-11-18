@@ -14,10 +14,4 @@ android {
         versionName '1.1'
     }
 
-    // Give the generated debug APK a short, predictable filename.
-    applicationVariants.all { variant ->
-        variant.outputs.all {
-            outputFileName = "zzz.apk"
-        }
-    }
 }
