@@ -76,7 +76,7 @@ class HuanSpeechController(context: Context) {
     }
 
     fun downloadModel() {
-        if (_state.value.downloading) return
+        if (_state.value.downloading || _state.value.translationDownloading) return
         scope.launch {
             _state.value = _state.value.copy(downloading = true, downloadProgress = 0, error = null, status = "Скачивание модели Whisper…")
             try {
