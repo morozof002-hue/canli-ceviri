@@ -23,7 +23,7 @@ android {
         targetSdk = 36
         versionCode = 14
         versionName = "1.0.0"
-        buildConfigField("String", "RAPOR_WHATSAPP", "\"")
+        buildConfigField("String", "RAPOR_WHATSAPP", "\"\"")
 
         ndk {
             abiFilters += listOf("arm64-v8a")
