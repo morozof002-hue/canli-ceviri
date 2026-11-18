@@ -23,7 +23,8 @@ Implemented in this first step:
 - New HUAN-branded Compose screen.
 - Local microphone recording with tap, hold-to-speak and silence-stop modes.
 - Whisper.cpp small multilingual model download and on-device speech recognition.
-- ML Kit on-device translation for Russian, Chinese, Turkish and English after language model download.
+- Optional Tencent Hy-MT2 1.8B translation model, running locally through llama.cpp after a one-time ~1.13 GB download.
+- ML Kit remains as a fast fallback when Hy-MT2 has not been downloaded or cannot be loaded.
 - Android Text-to-Speech output when the installed voice supports the selected language.
 - Two language selectors for the four core languages.
 - Settings dialog with all three planned microphone modes.
@@ -38,7 +39,7 @@ Still to implement or validate:
 - Conversation history and editing/replay.
 - Device-level testing of recognition speed, heat, memory and TTS voices.
 
-The microphone buttons now run the local Whisper recognition path. Translation models are downloaded by ML Kit when a language pair is first used; first-time model download therefore needs internet. The full app still requires a successful CI build and real-device testing before it should be treated as a finished translator.
+The microphone buttons run the local Whisper recognition path. When the optional Hy-MT2 model is installed, translation also runs locally on the phone and does not send text to a server. The first Hy-MT2 download requires internet and about 1.13 GB of free storage. Until it is downloaded, HUAN keeps the ML Kit fallback, which downloads language packs on first use. Real-device speed, heat, memory and quality still need to be tested on the target phone.
 
 ## Planned architecture
 
@@ -48,7 +49,7 @@ The microphone buttons now run the local Whisper recognition path. Translation m
 | Settings | Persistent local preferences; migrate to DataStore |
 | Speech recognition | whisper.cpp, subject to device performance tests |
 | Voice activity detection | Local VAD implementation |
-| Translation | Pluggable on-device translation engine |
+| Translation | Tencent Hy-MT2 1.8B via llama.cpp (optional local model); ML Kit fallback |
 | Speech output | Android TextToSpeech with installed offline voices |
 | Model management | Download, verify, update and remove language models |
 

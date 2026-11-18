@@ -8,6 +8,7 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.alterra.canliceviri.asr.WhisperModel
+import com.alterra.canliceviri.llm.HyMtTranslator
 import com.google.android.gms.tasks.Tasks
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.Translation
@@ -38,7 +39,10 @@ data class HuanSpeechState(
     val modelReady: Boolean = false,
     val downloading: Boolean = false,
     val downloadProgress: Int = 0,
-    val processing: Boolean = false
+    val processing: Boolean = false,
+    val translationModelReady: Boolean = false,
+    val translationDownloading: Boolean = false,
+    val translationDownloadProgress: Int = 0
 )
 
 /**
@@ -49,7 +53,9 @@ class HuanSpeechController(context: Context) {
     private val app = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val modelFile = File(app.getExternalFilesDir("models"), "ggml-small.bin")
+    private val translationModelFile = File(app.getExternalFilesDir("models"), HyMtTranslator.MODEL_FILE)
     private var whisper: WhisperModel? = null
+    private var hyMt: HyMtTranslator? = null
     private var recorder: AudioRecord? = null
     private var recordingJob: Job? = null
     private var recordingSamples = ArrayList<Short>(16_000 * 12)
@@ -57,7 +63,10 @@ class HuanSpeechController(context: Context) {
     private var tts: TextToSpeech? = null
     private var ttsReady = false
 
-    private val _state = MutableStateFlow(HuanSpeechState(modelReady = modelFile.exists()))
+    private val _state = MutableStateFlow(HuanSpeechState(
+        modelReady = modelFile.exists(),
+        translationModelReady = translationModelFile.exists()
+    ))
     val state: StateFlow<HuanSpeechState> = _state.asStateFlow()
 
     init {
@@ -67,7 +76,7 @@ class HuanSpeechController(context: Context) {
     }
 
     fun downloadModel() {
-        if (_state.value.downloading) return
+        if (_state.value.downloading || _state.value.translationDownloading) return
         scope.launch {
             _state.value = _state.value.copy(downloading = true, downloadProgress = 0, error = null, status = "Скачивание модели Whisper…")
             try {
@@ -112,8 +121,80 @@ class HuanSpeechController(context: Context) {
         }
     }
 
+    /**
+     * Downloads the optional Hy-MT2 1.8B translation model. It is used locally after the first download.
+     * The existing ML Kit path remains available as a quick fallback.
+     */
+    fun downloadTranslationModel() {
+        if (_state.value.translationDownloading || _state.value.downloading) return
+        scope.launch {
+            _state.value = _state.value.copy(
+                translationDownloading = true,
+                translationDownloadProgress = 0,
+                error = null,
+                status = "Скачивание качественной модели перевода Hy-MT2…"
+            )
+            try {
+                withContext(Dispatchers.IO) {
+                    translationModelFile.parentFile?.mkdirs()
+                    val part = File(translationModelFile.parentFile, translationModelFile.name + ".part")
+                    val connection = (URL(HyMtTranslator.MODEL_URL).openConnection() as HttpURLConnection).apply {
+                        connectTimeout = 30_000
+                        readTimeout = 120_000
+                        instanceFollowRedirects = true
+                    }
+                    try {
+                        connection.connect()
+                        if (connection.responseCode !in 200..299) error("HTTP " + connection.responseCode)
+                        val total = connection.contentLengthLong
+                        connection.inputStream.use { input ->
+                            part.outputStream().use { output ->
+                                val buffer = ByteArray(1024 * 512)
+                                var count: Int
+                                var received = 0L
+                                while (input.read(buffer).also { count = it } >= 0) {
+                                    if (count == 0) continue
+                                    output.write(buffer, 0, count)
+                                    received += count
+                                    if (total > 0) {
+                                        val progress = ((received * 100) / total).toInt().coerceIn(0, 100)
+                                        scope.launch {
+                                            _state.value = _state.value.copy(translationDownloadProgress = progress)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } finally {
+                        connection.disconnect()
+                    }
+                    if (part.length() < 1_000_000_000L) {
+                        part.delete()
+                        error("Файл Hy-MT2 неполный: загрузка прервана")
+                    }
+                    if (!part.renameTo(translationModelFile)) {
+                        part.copyTo(translationModelFile, overwrite = true)
+                        part.delete()
+                    }
+                }
+                _state.value = _state.value.copy(
+                    translationDownloading = false,
+                    translationModelReady = true,
+                    translationDownloadProgress = 100,
+                    status = "Hy-MT2 загружена. Качественный перевод включён."
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    translationDownloading = false,
+                    error = e.message ?: "Не удалось скачать модель перевода",
+                    status = "Ошибка загрузки Hy-MT2"
+                )
+            }
+        }
+    }
+
     fun startRecording(language: String?, autoFinishOnSilence: Boolean) {
-        if (_state.value.recording || _state.value.processing || _state.value.downloading || recordingJob?.isActive == true) return
+        if (_state.value.recording || _state.value.processing || _state.value.downloading || _state.value.translationDownloading || recordingJob?.isActive == true) return
         if (!modelFile.exists()) {
             _state.value = _state.value.copy(error = "Сначала скачайте модель Whisper")
             return
@@ -211,10 +292,29 @@ class HuanSpeechController(context: Context) {
     }
 
     private suspend fun translate(text: String, detected: String, target: String): String = withContext(Dispatchers.IO) {
+        if (detected.equals(target, ignoreCase = true)) return@withContext text
+
+        // Hy-MT2 is a translation-specialized model that runs entirely on the phone.
+        // Load it lazily so users who do not download the optional 1.13 GB model keep the fast ML Kit path.
+        if (translationModelFile.exists()) {
+            val localTranslator = hyMt ?: runCatching {
+                HyMtTranslator.load(translationModelFile, threads = 4, nCtx = 1024)
+            }.getOrNull()?.also { hyMt = it }
+
+            if (localTranslator != null) {
+                val result = runCatching { localTranslator.translate(text, target) }.getOrNull()
+                if (result != null && result.ok && result.text.isNotBlank()) {
+                    return@withContext result.text
+                }
+                _state.value = _state.value.copy(status = "Hy-MT2 не ответила — использую быстрый перевод")
+            } else {
+                _state.value = _state.value.copy(status = "Не удалось загрузить Hy-MT2 — использую быстрый перевод")
+            }
+        }
+
         val sourceCode = toMlKitLanguage(detected)
         val targetCode = toMlKitLanguage(target)
         if (sourceCode == null || targetCode == null) error("Перевод этой языковой пары пока не поддерживается")
-        if (sourceCode == targetCode) return@withContext text
         val translator: Translator = Translation.getClient(
             TranslatorOptions.Builder().setSourceLanguage(sourceCode).setTargetLanguage(targetCode).build()
         )
@@ -279,6 +379,8 @@ class HuanSpeechController(context: Context) {
         recordingJob?.cancel()
         whisper?.close()
         whisper = null
+        hyMt?.close()
+        hyMt = null
         tts?.stop()
         tts?.shutdown()
         tts = null
