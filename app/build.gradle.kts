@@ -21,7 +21,7 @@ android {
         applicationId = "com.huan.translator"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
+        versionCode = 15
         versionName = "1.0.0"
         buildConfigField("String", "RAPOR_WHATSAPP", "\"\"")
 
