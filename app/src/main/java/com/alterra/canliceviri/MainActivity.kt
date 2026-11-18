@@ -115,7 +115,8 @@ class MainActivity : ComponentActivity() {
                             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                         }
                     },
-                    onStop = controller::stopRecording
+                    onStop = controller::stopRecording,
+                    onClear = controller::clear
                 )
             }
         }
@@ -132,7 +133,8 @@ private fun HuanHome(
     onSave: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit,
     onDownloadModel: () -> Unit,
     onStart: (String?, Boolean) -> Unit,
-    onStop: () -> Unit
+    onStop: () -> Unit,
+    onClear: () -> Unit
 ) {
     var source by remember { mutableStateOf(initialSource) }
     var target by remember { mutableStateOf(initialTarget) }
@@ -263,7 +265,7 @@ private fun HuanHome(
                     Text(speechState.translatedText.ifBlank { "Перевод появится здесь и будет произнесён вслух." }, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF17233B), lineHeight = 26.sp)
                     Spacer(Modifier.weight(1f))
                     OutlinedButton(
-                        onClick = { activeLanguage = null },
+                        onClick = { activeLanguage = null; onClear() },
                         modifier = Modifier.fillMaxWidth()
                     ) { Text("Очистить экран") }
                 }
