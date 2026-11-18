@@ -215,6 +215,40 @@ class HuanSpeechController(context: Context) {
         }
     }
 
+    fun translateTypedText(text: String, sourceLanguage: String, targetLanguage: String) {
+        val input = text.trim()
+        if (input.isBlank()) {
+            _state.value = _state.value.copy(error = "Введите текст для перевода")
+            return
+        }
+        if (_state.value.recording || _state.value.processing || _state.value.downloading || _state.value.translationDownloading) return
+        scope.launch {
+            _state.value = _state.value.copy(
+                sourceText = input,
+                translatedText = "",
+                error = null,
+                processing = true,
+                status = "Перевод текста…"
+            )
+            try {
+                val translated = translate(input, sourceLanguage, targetLanguage)
+                _state.value = _state.value.copy(
+                    sourceText = input,
+                    translatedText = translated,
+                    processing = false,
+                    status = "Готово · ${sourceLanguage.uppercase(Locale.ROOT)} → ${targetLanguage.uppercase(Locale.ROOT)}"
+                )
+                speak(translated, targetLanguage)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    processing = false,
+                    error = e.message ?: "Не удалось перевести текст",
+                    status = "Ошибка перевода"
+                )
+            }
+        }
+    }
+
     fun startRecording(language: String?, autoFinishOnSilence: Boolean) {
         if (_state.value.recording || _state.value.processing || _state.value.downloading || _state.value.translationDownloading || recordingJob?.isActive == true) return
         if (!modelFile.exists()) {
