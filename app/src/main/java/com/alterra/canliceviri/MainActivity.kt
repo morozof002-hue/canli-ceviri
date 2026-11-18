@@ -1,6 +1,8 @@
 package com.alterra.canliceviri
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -32,6 +34,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -135,6 +138,11 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onStop = controller::stopRecording,
+                    onTranslateText = controller::translateTypedText,
+                    onCopyText = { text ->
+                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("HUAN", text))
+                    },
                     onClear = controller::clear
                 )
             }
@@ -159,6 +167,8 @@ private fun HuanHome(
     onDownloadTranslationModel: () -> Unit,
     onStart: (String?, Boolean) -> Unit,
     onStop: () -> Unit,
+    onTranslateText: (String, String, String) -> Unit,
+    onCopyText: (String) -> Unit,
     onClear: () -> Unit
 ) {
     var source by remember { mutableStateOf(initialSource) }
@@ -171,6 +181,8 @@ private fun HuanHome(
     var currentVoice2 by remember { mutableStateOf(initialVoice2) }
     var settingsOpen by remember { mutableStateOf(false) }
     var activeLanguage by remember { mutableStateOf<String?>(null) }
+    var manualText by remember { mutableStateOf("") }
+    var manualSourceIsFirst by remember { mutableStateOf(true) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF4F6FA)) {
         Column(
@@ -305,7 +317,54 @@ private fun HuanHome(
                 Text(it, color = Color(0xFFB42318), fontSize = 12.sp, textAlign = TextAlign.Center)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
+            Text("ПЕРЕВОД ТЕКСТА", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.2.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = { manualSourceIsFirst = true },
+                    modifier = Modifier.weight(1f),
+                    enabled = !manualSourceIsFirst
+                ) { Text(source.title, maxLines = 1) }
+                OutlinedButton(
+                    onClick = { manualSourceIsFirst = false },
+                    modifier = Modifier.weight(1f),
+                    enabled = manualSourceIsFirst
+                ) { Text(target.title, maxLines = 1) }
+            }
+            OutlinedTextField(
+                value = manualText,
+                onValueChange = { manualText = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Введите текст для перевода…") },
+                minLines = 2,
+                maxLines = 3,
+                enabled = !speechState.processing && !speechState.recording
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        val from = if (manualSourceIsFirst) source.code else target.code
+                        val to = if (manualSourceIsFirst) target.code else source.code
+                        onTranslateText(manualText, from, to)
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = manualText.isNotBlank() && !speechState.processing && !speechState.recording
+                ) { Text("Перевести") }
+                OutlinedButton(
+                    onClick = { onCopyText(manualText) },
+                    enabled = manualText.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Копировать текст") }
+            }
+
+            Spacer(Modifier.height(10.dp))
             Card(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 shape = RoundedCornerShape(22.dp),
@@ -314,11 +373,17 @@ private fun HuanHome(
                 Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
                     Text("ВЫ СКАЗАЛИ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.5.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text(speechState.sourceText.ifBlank { "Распознанная речь появится здесь." }, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 23.sp)
-                    Spacer(Modifier.height(16.dp))
+                    Text(speechState.sourceText.ifBlank { "Распознанная речь или введённый текст появится здесь." }, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 23.sp)
+                    if (speechState.sourceText.isNotBlank()) {
+                        TextButton(onClick = { onCopyText(speechState.sourceText) }) { Text("Копировать исходный текст") }
+                    }
+                    Spacer(Modifier.height(8.dp))
                     Text("ПЕРЕВОД", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF087E65), letterSpacing = 1.5.sp)
                     Spacer(Modifier.height(8.dp))
                     Text(speechState.translatedText.ifBlank { "Перевод появится здесь и будет произнесён вслух." }, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF17233B), lineHeight = 26.sp)
+                    if (speechState.translatedText.isNotBlank()) {
+                        TextButton(onClick = { onCopyText(speechState.translatedText) }) { Text("Копировать перевод") }
+                    }
                     Spacer(Modifier.weight(1f))
                     OutlinedButton(
                         onClick = { activeLanguage = null; onClear() },
