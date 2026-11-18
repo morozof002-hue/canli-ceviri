@@ -23,7 +23,7 @@ Implemented in this first step:
 - New HUAN-branded Compose screen.
 - Two language selectors for the four core languages.
 - Settings dialog with all three planned microphone modes.
-- Persistent language and mode selections using Android preferences.
+- Persistent language, microphone mode and automatic language-detection setting using Android preferences.
 - Simplified Android manifest and standalone app Gradle configuration.
 - A dedicated GitHub Actions workflow for building a debug APK.
 
