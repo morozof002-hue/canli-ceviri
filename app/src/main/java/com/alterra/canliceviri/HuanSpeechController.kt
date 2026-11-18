@@ -171,7 +171,7 @@ class HuanSpeechController(context: Context) {
                 val second = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_2", "tr") ?: "tr"
                 val chosenLanguage = language ?: withContext(Dispatchers.Default) {
                     model.detectLanguage(pcm, listOf(first, second))?.best?.first
-                }
+                } ?: first
                 val result = withContext(Dispatchers.Default) {
                     model.transcribeWithRetry(pcm, chosenLanguage, threads = WhisperModel.DEFAULT_THREADS, maxTokens = 180)
                 }
@@ -247,6 +247,10 @@ class HuanSpeechController(context: Context) {
         if (availability >= TextToSpeech.LANG_AVAILABLE) {
             engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "huan-${System.currentTimeMillis()}")
         }
+    }
+
+    fun clear() {
+        _state.value = _state.value.copy(sourceText = "", translatedText = "", error = null)
     }
 
     private fun stopRecorder() {
