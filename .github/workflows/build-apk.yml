@@ -7,6 +7,7 @@ on:
       - main
       - huan-rebuild
       - feature/hymt2-translation
+      - feature/tts-controls-stable-signing
 
 permissions:
   contents: read
@@ -37,6 +38,28 @@ jobs:
 
       - name: Prepare native dependencies
         run: bash scripts/kurulum.sh
+
+      # Restore the same debug key on every run; create it once on the first run.
+      - name: Restore stable debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: huan-android-debug-signing-v1
+
+      - name: Ensure stable debug signing key exists
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v \
+              -keystore "$HOME/.android/debug.keystore" \
+              -storepass android \
+              -keypass android \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          test -s "$HOME/.android/debug.keystore"
+          ls -l "$HOME/.android/debug.keystore"
 
       - name: Build APK
         run: |

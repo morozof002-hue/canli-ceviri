@@ -30,6 +30,8 @@ import java.net.URL
 import java.util.Locale
 import kotlin.math.sqrt
 
+data class HuanTtsVoice(val id: String, val label: String, val language: String)
+
 data class HuanSpeechState(
     val status: String = "Скачайте модель распознавания, чтобы начать",
     val sourceText: String = "",
@@ -42,7 +44,8 @@ data class HuanSpeechState(
     val processing: Boolean = false,
     val translationModelReady: Boolean = false,
     val translationDownloading: Boolean = false,
-    val translationDownloadProgress: Int = 0
+    val translationDownloadProgress: Int = 0,
+    val ttsVoices: List<HuanTtsVoice> = emptyList()
 )
 
 /**
@@ -72,6 +75,25 @@ class HuanSpeechController(context: Context) {
     init {
         tts = TextToSpeech(app) { result ->
             ttsReady = result == TextToSpeech.SUCCESS
+            if (ttsReady) {
+                val voices = tts?.voices.orEmpty()
+                    .filter { it.locale.language in setOf("ru", "tr", "en", "zh") }
+                    .sortedWith(compareBy({ it.locale.language }, { it.name }))
+                    .map { v ->
+                        val languageName = when (v.locale.language) {
+                            "ru" -> "Русский"
+                            "tr" -> "Турецкий"
+                            "zh" -> "Китайский"
+                            else -> "Английский"
+                        }
+                        HuanTtsVoice(
+                            id = v.name,
+                            label = "$languageName · ${v.name}" + if (v.isNetworkConnectionRequired) " · онлайн" else " · офлайн",
+                            language = v.locale.language
+                        )
+                    }
+                _state.value = _state.value.copy(ttsVoices = voices)
+            }
         }
     }
 
@@ -188,6 +210,40 @@ class HuanSpeechController(context: Context) {
                     translationDownloading = false,
                     error = e.message ?: "Не удалось скачать модель перевода",
                     status = "Ошибка загрузки Hy-MT2"
+                )
+            }
+        }
+    }
+
+    fun translateTypedText(text: String, sourceLanguage: String, targetLanguage: String) {
+        val input = text.trim()
+        if (input.isBlank()) {
+            _state.value = _state.value.copy(error = "Введите текст для перевода")
+            return
+        }
+        if (_state.value.recording || _state.value.processing || _state.value.downloading || _state.value.translationDownloading) return
+        scope.launch {
+            _state.value = _state.value.copy(
+                sourceText = input,
+                translatedText = "",
+                error = null,
+                processing = true,
+                status = "Перевод текста…"
+            )
+            try {
+                val translated = translate(input, sourceLanguage, targetLanguage)
+                _state.value = _state.value.copy(
+                    sourceText = input,
+                    translatedText = translated,
+                    processing = false,
+                    status = "Готово · ${sourceLanguage.uppercase(Locale.ROOT)} → ${targetLanguage.uppercase(Locale.ROOT)}"
+                )
+                speak(translated, targetLanguage)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    processing = false,
+                    error = e.message ?: "Не удалось перевести текст",
+                    status = "Ошибка перевода"
                 )
             }
         }
@@ -353,14 +409,21 @@ class HuanSpeechController(context: Context) {
             else -> Locale.ENGLISH
         }
         val engine = tts ?: return
-        val offlineVoice = engine.voices
-            ?.filter { it.locale.language == locale.language && !it.isNetworkConnectionRequired }
-            ?.maxByOrNull { it.quality }
-        if (offlineVoice == null) {
-            _state.value = _state.value.copy(status = _state.value.status + " · Нет установленного офлайн-голоса для озвучивания")
+        val preferences = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE)
+        val rate = preferences.getFloat("speech_rate", 1.0f).coerceIn(0.5f, 2.0f)
+        val pitch = preferences.getFloat("speech_pitch", 1.0f).coerceIn(0.5f, 2.0f)
+        engine.setSpeechRate(rate)
+        engine.setPitch(pitch)
+        val selectedVoiceId = preferences.getString("tts_voice_$language", "")
+        val matchingVoices = engine.voices?.filter { it.locale.language == locale.language }.orEmpty()
+        val selectedVoice = matchingVoices.firstOrNull { it.name == selectedVoiceId }
+        val offlineVoice = matchingVoices.filter { !it.isNetworkConnectionRequired }.maxByOrNull { it.quality }
+        val voice = selectedVoice ?: offlineVoice ?: matchingVoices.maxByOrNull { it.quality }
+        if (voice == null) {
+            _state.value = _state.value.copy(status = _state.value.status + " · Для этого языка нет установленного голоса")
             return
         }
-        engine.voice = offlineVoice
+        engine.voice = voice
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "huan-" + System.currentTimeMillis())
     }
 

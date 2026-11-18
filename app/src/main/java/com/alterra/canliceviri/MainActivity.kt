@@ -1,6 +1,8 @@
 package com.alterra.canliceviri
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -14,7 +16,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -29,7 +34,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -50,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import java.util.Locale
 
 private data class HuanLanguage(val code: String, val title: String, val flag: String)
 
@@ -75,6 +83,10 @@ class MainActivity : ComponentActivity() {
         val savedTarget = prefs.getString("language_2", "tr") ?: "tr"
         val savedMode = prefs.getInt("control_mode", 0).coerceIn(0, 2)
         val savedAutoDetect = prefs.getBoolean("auto_detect", true)
+        val savedSpeechRate = prefs.getFloat("speech_rate", 1.0f)
+        val savedSpeechPitch = prefs.getFloat("speech_pitch", 1.0f)
+        val savedVoice1 = prefs.getString("tts_voice_$savedSource", "") ?: ""
+        val savedVoice2 = prefs.getString("tts_voice_$savedTarget", "") ?: ""
 
         setContent {
             val controller = remember { HuanSpeechController(applicationContext) }
@@ -96,13 +108,22 @@ class MainActivity : ComponentActivity() {
                     initialTarget = coreLanguages.firstOrNull { it.code == savedTarget } ?: coreLanguages[2],
                     initialMode = savedMode,
                     initialAutoDetect = savedAutoDetect,
+                    initialSpeechRate = savedSpeechRate,
+                    initialSpeechPitch = savedSpeechPitch,
+                    initialVoice1 = savedVoice1,
+                    initialVoice2 = savedVoice2,
+                    voiceOptions = speechState.ttsVoices,
                     speechState = speechState,
-                    onSave = { source, target, mode, autoDetect ->
+                    onSave = { source, target, mode, autoDetect, speechRate, speechPitch, voice1, voice2 ->
                         prefs.edit()
                             .putString("language_1", source.code)
                             .putString("language_2", target.code)
                             .putInt("control_mode", mode)
                             .putBoolean("auto_detect", autoDetect)
+                            .putFloat("speech_rate", speechRate)
+                            .putFloat("speech_pitch", speechPitch)
+                            .putString("tts_voice_${source.code}", voice1)
+                            .putString("tts_voice_${target.code}", voice2)
                             .apply()
                     },
                     onDownloadModel = controller::downloadModel,
@@ -117,6 +138,11 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     onStop = controller::stopRecording,
+                    onTranslateText = controller::translateTypedText,
+                    onCopyText = { text ->
+                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("HUAN", text))
+                    },
                     onClear = controller::clear
                 )
             }
@@ -130,20 +156,33 @@ private fun HuanHome(
     initialTarget: HuanLanguage,
     initialMode: Int,
     initialAutoDetect: Boolean,
+    initialSpeechRate: Float,
+    initialSpeechPitch: Float,
+    initialVoice1: String,
+    initialVoice2: String,
+    voiceOptions: List<HuanTtsVoice>,
     speechState: HuanSpeechState,
-    onSave: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit,
+    onSave: (HuanLanguage, HuanLanguage, Int, Boolean, Float, Float, String, String) -> Unit,
     onDownloadModel: () -> Unit,
     onDownloadTranslationModel: () -> Unit,
     onStart: (String?, Boolean) -> Unit,
     onStop: () -> Unit,
+    onTranslateText: (String, String, String) -> Unit,
+    onCopyText: (String) -> Unit,
     onClear: () -> Unit
 ) {
     var source by remember { mutableStateOf(initialSource) }
     var target by remember { mutableStateOf(initialTarget) }
     var mode by remember { mutableStateOf(initialMode) }
     var autoDetect by remember { mutableStateOf(initialAutoDetect) }
+    var currentSpeechRate by remember { mutableStateOf(initialSpeechRate) }
+    var currentSpeechPitch by remember { mutableStateOf(initialSpeechPitch) }
+    var currentVoice1 by remember { mutableStateOf(initialVoice1) }
+    var currentVoice2 by remember { mutableStateOf(initialVoice2) }
     var settingsOpen by remember { mutableStateOf(false) }
     var activeLanguage by remember { mutableStateOf<String?>(null) }
+    var manualText by remember { mutableStateOf("") }
+    var manualSourceIsFirst by remember { mutableStateOf(true) }
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF4F6FA)) {
         Column(
@@ -278,7 +317,54 @@ private fun HuanHome(
                 Text(it, color = Color(0xFFB42318), fontSize = 12.sp, textAlign = TextAlign.Center)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
+            Text("ПЕРЕВОД ТЕКСТА", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.2.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = { manualSourceIsFirst = true },
+                    modifier = Modifier.weight(1f),
+                    enabled = !manualSourceIsFirst
+                ) { Text(source.title, maxLines = 1) }
+                OutlinedButton(
+                    onClick = { manualSourceIsFirst = false },
+                    modifier = Modifier.weight(1f),
+                    enabled = manualSourceIsFirst
+                ) { Text(target.title, maxLines = 1) }
+            }
+            OutlinedTextField(
+                value = manualText,
+                onValueChange = { manualText = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Введите текст для перевода…") },
+                minLines = 2,
+                maxLines = 3,
+                enabled = !speechState.processing && !speechState.recording
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = {
+                        val from = if (manualSourceIsFirst) source.code else target.code
+                        val to = if (manualSourceIsFirst) target.code else source.code
+                        onTranslateText(manualText, from, to)
+                    },
+                    modifier = Modifier.weight(1f),
+                    enabled = manualText.isNotBlank() && !speechState.processing && !speechState.recording
+                ) { Text("Перевести") }
+                OutlinedButton(
+                    onClick = { onCopyText(manualText) },
+                    enabled = manualText.isNotBlank(),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Копировать текст") }
+            }
+
+            Spacer(Modifier.height(10.dp))
             Card(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 shape = RoundedCornerShape(22.dp),
@@ -287,11 +373,17 @@ private fun HuanHome(
                 Column(modifier = Modifier.fillMaxSize().padding(18.dp)) {
                     Text("ВЫ СКАЗАЛИ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 1.5.sp)
                     Spacer(Modifier.height(8.dp))
-                    Text(speechState.sourceText.ifBlank { "Распознанная речь появится здесь." }, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 23.sp)
-                    Spacer(Modifier.height(16.dp))
+                    Text(speechState.sourceText.ifBlank { "Распознанная речь или введённый текст появится здесь." }, fontSize = 16.sp, color = Color(0xFF344054), lineHeight = 23.sp)
+                    if (speechState.sourceText.isNotBlank()) {
+                        TextButton(onClick = { onCopyText(speechState.sourceText) }) { Text("Копировать исходный текст") }
+                    }
+                    Spacer(Modifier.height(8.dp))
                     Text("ПЕРЕВОД", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF087E65), letterSpacing = 1.5.sp)
                     Spacer(Modifier.height(8.dp))
                     Text(speechState.translatedText.ifBlank { "Перевод появится здесь и будет произнесён вслух." }, fontSize = 18.sp, fontWeight = FontWeight.Medium, color = Color(0xFF17233B), lineHeight = 26.sp)
+                    if (speechState.translatedText.isNotBlank()) {
+                        TextButton(onClick = { onCopyText(speechState.translatedText) }) { Text("Копировать перевод") }
+                    }
                     Spacer(Modifier.weight(1f))
                     OutlinedButton(
                         onClick = { activeLanguage = null; onClear() },
@@ -316,13 +408,22 @@ private fun HuanHome(
             target = target,
             mode = mode,
             autoDetect = autoDetect,
+            speechRate = currentSpeechRate,
+            speechPitch = currentSpeechPitch,
+            voice1 = currentVoice1,
+            voice2 = currentVoice2,
+            voiceOptions = voiceOptions,
             onDismiss = { settingsOpen = false },
-            onApply = { newSource, newTarget, newMode, newAutoDetect ->
+            onApply = { newSource, newTarget, newMode, newAutoDetect, newSpeechRate, newSpeechPitch, newVoice1, newVoice2 ->
                 source = newSource
                 target = newTarget
                 mode = newMode
                 autoDetect = newAutoDetect
-                onSave(newSource, newTarget, newMode, newAutoDetect)
+                currentSpeechRate = newSpeechRate
+                currentSpeechPitch = newSpeechPitch
+                currentVoice1 = newVoice1
+                currentVoice2 = newVoice2
+                onSave(newSource, newTarget, newMode, newAutoDetect, newSpeechRate, newSpeechPitch, newVoice1, newVoice2)
                 settingsOpen = false
             }
         )
@@ -380,19 +481,31 @@ private fun SettingsDialog(
     target: HuanLanguage,
     mode: Int,
     autoDetect: Boolean,
+    speechRate: Float,
+    speechPitch: Float,
+    voice1: String,
+    voice2: String,
+    voiceOptions: List<HuanTtsVoice>,
     onDismiss: () -> Unit,
-    onApply: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit
+    onApply: (HuanLanguage, HuanLanguage, Int, Boolean, Float, Float, String, String) -> Unit
 ) {
     var selectedSource by remember { mutableStateOf(source) }
     var selectedTarget by remember { mutableStateOf(target) }
     var selectedMode by remember { mutableStateOf(mode) }
     var selectedAutoDetect by remember { mutableStateOf(autoDetect) }
+    var selectedSpeechRate by remember { mutableStateOf(speechRate.coerceIn(0.5f, 2.0f)) }
+    var selectedSpeechPitch by remember { mutableStateOf(speechPitch.coerceIn(0.5f, 2.0f)) }
+    var selectedVoice1 by remember { mutableStateOf(voice1) }
+    var selectedVoice2 by remember { mutableStateOf(voice2) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Настройки перевода") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.fillMaxWidth().heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text("Язык 1", fontWeight = FontWeight.Bold)
                 LanguageDropdown(selectedSource) { selectedSource = it }
                 Text("Язык 2", fontWeight = FontWeight.Bold)
@@ -412,6 +525,16 @@ private fun SettingsDialog(
                         Text(label, fontSize = 12.sp)
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                Text("Озвучивание", fontWeight = FontWeight.Bold)
+                Text("Голос для языка 1", fontSize = 12.sp)
+                VoiceDropdown(selectedSource.code, selectedVoice1, voiceOptions) { selectedVoice1 = it }
+                Text("Голос для языка 2", fontSize = 12.sp)
+                VoiceDropdown(selectedTarget.code, selectedVoice2, voiceOptions) { selectedVoice2 = it }
+                Text("Скорость: ${String.format(Locale.getDefault(), "%.1f", selectedSpeechRate)}×", fontSize = 12.sp)
+                Slider(value = selectedSpeechRate, onValueChange = { selectedSpeechRate = it }, valueRange = 0.5f..2.0f)
+                Text("Высота голоса: ${String.format(Locale.getDefault(), "%.1f", selectedSpeechPitch)}", fontSize = 12.sp)
+                Slider(value = selectedSpeechPitch, onValueChange = { selectedSpeechPitch = it }, valueRange = 0.5f..2.0f)
             }
         },
         confirmButton = {
@@ -420,7 +543,7 @@ private fun SettingsDialog(
                     val safeTarget = if (selectedTarget.code == selectedSource.code) {
                         coreLanguages.first { it.code != selectedSource.code }
                     } else selectedTarget
-                    onApply(selectedSource, safeTarget, selectedMode, selectedAutoDetect)
+                    onApply(selectedSource, safeTarget, selectedMode, selectedAutoDetect, selectedSpeechRate, selectedSpeechPitch, selectedVoice1, selectedVoice2)
                 }
             ) { Text("Сохранить") }
         },
@@ -443,6 +566,30 @@ private fun LanguageDropdown(selected: HuanLanguage, onSelected: (HuanLanguage) 
                     expanded = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun VoiceDropdown(
+    language: String,
+    selectedId: String,
+    voices: List<HuanTtsVoice>,
+    onSelected: (String) -> Unit
+) {
+    val languageVoices = voices.filter { it.language == language }
+    var expanded by remember(language) { mutableStateOf(false) }
+    val selectedLabel = languageVoices.firstOrNull { it.id == selectedId }?.label ?: "Автоматический голос"
+    OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+        Text(selectedLabel, maxLines = 1)
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(text = { Text("Автоматический голос") }, onClick = { onSelected(""); expanded = false })
+        languageVoices.forEach { voice ->
+            DropdownMenuItem(text = { Text(voice.label) }, onClick = { onSelected(voice.id); expanded = false })
+        }
+        if (languageVoices.isEmpty()) {
+            DropdownMenuItem(text = { Text("Нет голосов этого языка в системе") }, onClick = { expanded = false })
         }
     }
 }
