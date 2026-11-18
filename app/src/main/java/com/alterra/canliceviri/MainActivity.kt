@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
                             .apply()
                     },
                     onDownloadModel = controller::downloadModel,
+                    onDownloadTranslationModel = controller::downloadTranslationModel,
                     onStart = { language, autoFinish ->
                         pendingLanguage = language
                         pendingAutoFinish = autoFinish
@@ -132,6 +133,7 @@ private fun HuanHome(
     speechState: HuanSpeechState,
     onSave: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit,
     onDownloadModel: () -> Unit,
+    onDownloadTranslationModel: () -> Unit,
     onStart: (String?, Boolean) -> Unit,
     onStop: () -> Unit,
     onClear: () -> Unit
@@ -244,6 +246,33 @@ private fun HuanHome(
                     Text("Скачать модель распознавания (~466 МБ)")
                 }
             }
+            if (speechState.translationDownloading) {
+                Spacer(Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { speechState.translationDownloadProgress / 100f },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    "${speechState.translationDownloadProgress}% · Hy-MT2 (~1,13 ГБ)",
+                    fontSize = 11.sp,
+                    color = Color(0xFF667085)
+                )
+            } else if (speechState.translationModelReady) {
+                Text(
+                    "Качественный перевод Hy-MT2 включён · работает на телефоне",
+                    fontSize = 11.sp,
+                    color = Color(0xFF087E65),
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                Spacer(Modifier.height(6.dp))
+                OutlinedButton(
+                    onClick = onDownloadTranslationModel,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Скачать качественный перевод (~1,13 ГБ)")
+                }
+            }
             speechState.error?.let {
                 Spacer(Modifier.height(6.dp))
                 Text(it, color = Color(0xFFB42318), fontSize = 12.sp, textAlign = TextAlign.Center)
@@ -273,7 +302,7 @@ private fun HuanHome(
 
             Spacer(Modifier.height(12.dp))
             Text(
-                if (speechState.processing) "Обработка на телефоне…" else "Распознавание — локально · Перевод — после загрузки языковых моделей",
+                if (speechState.processing) "Обработка на телефоне…" else if (speechState.translationModelReady) "Распознавание и качественный перевод — локально" else "Быстрый перевод доступен · Hy-MT2 улучшает качество",
                 fontSize = 10.sp,
                 color = Color(0xFF667085),
                 textAlign = TextAlign.Center
