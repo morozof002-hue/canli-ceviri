@@ -315,10 +315,11 @@ private fun LanguageCard(
     val gestureModifier = if (mode == 1) {
         Modifier.pointerInput(language.code) {
             awaitEachGesture {
-                awaitFirstDown()
+                // Button's own clickable consumes pointer changes; observe them even when consumed.
+                awaitFirstDown(requireUnconsumed = false)
                 onPressStart()
                 try {
-                    waitForUpOrCancellation()
+                    waitForUpOrCancellation(requireUnconsumed = false)
                 } finally {
                     onPressEnd()
                 }
