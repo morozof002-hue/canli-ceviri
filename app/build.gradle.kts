@@ -18,7 +18,7 @@ android {
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
-        applicationId = "com.alterra.canliceviri"
+        applicationId = "com.huan.translator"
         minSdk = 26
         targetSdk = 36
         versionCode = 14
