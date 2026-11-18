@@ -34,13 +34,8 @@ jobs:
         run: |
           sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;29.0.14206865" "cmake;3.31.6"
 
-      - name: Install zsh
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zsh
-
       - name: Prepare native dependencies
-        run: zsh scripts/kurulum.sh
+        run: bash scripts/kurulum.sh
 
       - name: Build APK
         run: |
