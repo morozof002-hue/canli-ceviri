@@ -165,6 +165,10 @@ private fun HuanHome(
     var target by remember { mutableStateOf(initialTarget) }
     var mode by remember { mutableStateOf(initialMode) }
     var autoDetect by remember { mutableStateOf(initialAutoDetect) }
+    var currentSpeechRate by remember { mutableStateOf(initialSpeechRate) }
+    var currentSpeechPitch by remember { mutableStateOf(initialSpeechPitch) }
+    var currentVoice1 by remember { mutableStateOf(initialVoice1) }
+    var currentVoice2 by remember { mutableStateOf(initialVoice2) }
     var settingsOpen by remember { mutableStateOf(false) }
     var activeLanguage by remember { mutableStateOf<String?>(null) }
 
@@ -339,10 +343,10 @@ private fun HuanHome(
             target = target,
             mode = mode,
             autoDetect = autoDetect,
-            speechRate = initialSpeechRate,
-            speechPitch = initialSpeechPitch,
-            voice1 = initialVoice1,
-            voice2 = initialVoice2,
+            speechRate = currentSpeechRate,
+            speechPitch = currentSpeechPitch,
+            voice1 = currentVoice1,
+            voice2 = currentVoice2,
             voiceOptions = voiceOptions,
             onDismiss = { settingsOpen = false },
             onApply = { newSource, newTarget, newMode, newAutoDetect, newSpeechRate, newSpeechPitch, newVoice1, newVoice2 ->
@@ -350,6 +354,10 @@ private fun HuanHome(
                 target = newTarget
                 mode = newMode
                 autoDetect = newAutoDetect
+                currentSpeechRate = newSpeechRate
+                currentSpeechPitch = newSpeechPitch
+                currentVoice1 = newVoice1
+                currentVoice2 = newVoice2
                 onSave(newSource, newTarget, newMode, newAutoDetect, newSpeechRate, newSpeechPitch, newVoice1, newVoice2)
                 settingsOpen = false
             }
