@@ -30,6 +30,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -75,6 +76,10 @@ class MainActivity : ComponentActivity() {
         val savedTarget = prefs.getString("language_2", "tr") ?: "tr"
         val savedMode = prefs.getInt("control_mode", 0).coerceIn(0, 2)
         val savedAutoDetect = prefs.getBoolean("auto_detect", true)
+        val savedSpeechRate = prefs.getFloat("speech_rate", 1.0f)
+        val savedSpeechPitch = prefs.getFloat("speech_pitch", 1.0f)
+        val savedVoice1 = prefs.getString("tts_voice_$savedSource", "") ?: ""
+        val savedVoice2 = prefs.getString("tts_voice_$savedTarget", "") ?: ""
 
         setContent {
             val controller = remember { HuanSpeechController(applicationContext) }
@@ -96,13 +101,22 @@ class MainActivity : ComponentActivity() {
                     initialTarget = coreLanguages.firstOrNull { it.code == savedTarget } ?: coreLanguages[2],
                     initialMode = savedMode,
                     initialAutoDetect = savedAutoDetect,
+                    initialSpeechRate = savedSpeechRate,
+                    initialSpeechPitch = savedSpeechPitch,
+                    initialVoice1 = savedVoice1,
+                    initialVoice2 = savedVoice2,
+                    voiceOptions = speechState.ttsVoices,
                     speechState = speechState,
-                    onSave = { source, target, mode, autoDetect ->
+                    onSave = { source, target, mode, autoDetect, speechRate, speechPitch, voice1, voice2 ->
                         prefs.edit()
                             .putString("language_1", source.code)
                             .putString("language_2", target.code)
                             .putInt("control_mode", mode)
                             .putBoolean("auto_detect", autoDetect)
+                            .putFloat("speech_rate", speechRate)
+                            .putFloat("speech_pitch", speechPitch)
+                            .putString("tts_voice_${source.code}", voice1)
+                            .putString("tts_voice_${target.code}", voice2)
                             .apply()
                     },
                     onDownloadModel = controller::downloadModel,
@@ -130,8 +144,13 @@ private fun HuanHome(
     initialTarget: HuanLanguage,
     initialMode: Int,
     initialAutoDetect: Boolean,
+    initialSpeechRate: Float,
+    initialSpeechPitch: Float,
+    initialVoice1: String,
+    initialVoice2: String,
+    voiceOptions: List<HuanTtsVoice>,
     speechState: HuanSpeechState,
-    onSave: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit,
+    onSave: (HuanLanguage, HuanLanguage, Int, Boolean, Float, Float, String, String) -> Unit,
     onDownloadModel: () -> Unit,
     onDownloadTranslationModel: () -> Unit,
     onStart: (String?, Boolean) -> Unit,
@@ -316,13 +335,18 @@ private fun HuanHome(
             target = target,
             mode = mode,
             autoDetect = autoDetect,
+            speechRate = initialSpeechRate,
+            speechPitch = initialSpeechPitch,
+            voice1 = initialVoice1,
+            voice2 = initialVoice2,
+            voiceOptions = voiceOptions,
             onDismiss = { settingsOpen = false },
-            onApply = { newSource, newTarget, newMode, newAutoDetect ->
+            onApply = { newSource, newTarget, newMode, newAutoDetect, newSpeechRate, newSpeechPitch, newVoice1, newVoice2 ->
                 source = newSource
                 target = newTarget
                 mode = newMode
                 autoDetect = newAutoDetect
-                onSave(newSource, newTarget, newMode, newAutoDetect)
+                onSave(newSource, newTarget, newMode, newAutoDetect, newSpeechRate, newSpeechPitch, newVoice1, newVoice2)
                 settingsOpen = false
             }
         )
@@ -380,13 +404,22 @@ private fun SettingsDialog(
     target: HuanLanguage,
     mode: Int,
     autoDetect: Boolean,
+    speechRate: Float,
+    speechPitch: Float,
+    voice1: String,
+    voice2: String,
+    voiceOptions: List<HuanTtsVoice>,
     onDismiss: () -> Unit,
-    onApply: (HuanLanguage, HuanLanguage, Int, Boolean) -> Unit
+    onApply: (HuanLanguage, HuanLanguage, Int, Boolean, Float, Float, String, String) -> Unit
 ) {
     var selectedSource by remember { mutableStateOf(source) }
     var selectedTarget by remember { mutableStateOf(target) }
     var selectedMode by remember { mutableStateOf(mode) }
     var selectedAutoDetect by remember { mutableStateOf(autoDetect) }
+    var selectedSpeechRate by remember { mutableStateOf(speechRate.coerceIn(0.5f, 2.0f)) }
+    var selectedSpeechPitch by remember { mutableStateOf(speechPitch.coerceIn(0.5f, 2.0f)) }
+    var selectedVoice1 by remember { mutableStateOf(voice1) }
+    var selectedVoice2 by remember { mutableStateOf(voice2) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -412,6 +445,16 @@ private fun SettingsDialog(
                         Text(label, fontSize = 12.sp)
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                Text("Озвучивание", fontWeight = FontWeight.Bold)
+                Text("Голос для языка 1", fontSize = 12.sp)
+                VoiceDropdown(selectedSource.code, selectedVoice1, voiceOptions) { selectedVoice1 = it }
+                Text("Голос для языка 2", fontSize = 12.sp)
+                VoiceDropdown(selectedTarget.code, selectedVoice2, voiceOptions) { selectedVoice2 = it }
+                Text("Скорость: ${String.format(Locale.getDefault(), "%.1f", selectedSpeechRate)}×", fontSize = 12.sp)
+                Slider(value = selectedSpeechRate, onValueChange = { selectedSpeechRate = it }, valueRange = 0.5f..2.0f)
+                Text("Высота голоса: ${String.format(Locale.getDefault(), "%.1f", selectedSpeechPitch)}", fontSize = 12.sp)
+                Slider(value = selectedSpeechPitch, onValueChange = { selectedSpeechPitch = it }, valueRange = 0.5f..2.0f)
             }
         },
         confirmButton = {
@@ -420,7 +463,7 @@ private fun SettingsDialog(
                     val safeTarget = if (selectedTarget.code == selectedSource.code) {
                         coreLanguages.first { it.code != selectedSource.code }
                     } else selectedTarget
-                    onApply(selectedSource, safeTarget, selectedMode, selectedAutoDetect)
+                    onApply(selectedSource, safeTarget, selectedMode, selectedAutoDetect, selectedSpeechRate, selectedSpeechPitch, selectedVoice1, selectedVoice2)
                 }
             ) { Text("Сохранить") }
         },
@@ -443,6 +486,30 @@ private fun LanguageDropdown(selected: HuanLanguage, onSelected: (HuanLanguage) 
                     expanded = false
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun VoiceDropdown(
+    language: String,
+    selectedId: String,
+    voices: List<HuanTtsVoice>,
+    onSelected: (String) -> Unit
+) {
+    val languageVoices = voices.filter { it.language == language }
+    var expanded by remember(language) { mutableStateOf(false) }
+    val selectedLabel = languageVoices.firstOrNull { it.id == selectedId }?.label ?: "Автоматический голос"
+    OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
+        Text(selectedLabel, maxLines = 1)
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(text = { Text("Автоматический голос") }, onClick = { onSelected(""); expanded = false })
+        languageVoices.forEach { voice ->
+            DropdownMenuItem(text = { Text(voice.label) }, onClick = { onSelected(voice.id); expanded = false })
+        }
+        if (languageVoices.isEmpty()) {
+            DropdownMenuItem(text = { Text("Нет голосов этого языка в системе") }, onClick = { expanded = false })
         }
     }
 }
