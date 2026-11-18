@@ -17,24 +17,28 @@ HUAN is a new Android voice-translator project being rebuilt in this repository.
 
 ## Current development status
 
-The first HUAN interface rebuild is on the `huan-rebuild` branch.
+The HUAN rebuild is on the `huan-rebuild` branch.
 
 Implemented in this first step:
 - New HUAN-branded Compose screen.
+- Local microphone recording with tap, hold-to-speak and silence-stop modes.
+- Whisper.cpp small multilingual model download and on-device speech recognition.
+- ML Kit on-device translation for Russian, Chinese, Turkish and English after language model download.
+- Android Text-to-Speech output when the installed voice supports the selected language.
 - Two language selectors for the four core languages.
 - Settings dialog with all three planned microphone modes.
 - Persistent language, microphone mode and automatic language-detection setting using Android preferences.
 - Simplified Android manifest and standalone app Gradle configuration.
 - A dedicated GitHub Actions workflow for building a debug APK.
 
-Not implemented yet:
-- Actual microphone capture and speech recognition.
-- Voice activity detection.
-- Translation engine and model management.
-- Text-to-speech output.
-- Downloadable language packs and conversation history.
+Still to implement or validate:
+- Dedicated neural VAD (current first pass uses an energy/silence threshold).
+- A dedicated offline translation engine that does not depend on Google ML Kit model downloads.
+- Explicit translation-model download management and storage controls.
+- Conversation history and editing/replay.
+- Device-level testing of recognition speed, heat, memory and TTS voices.
 
-The microphone buttons currently display an explanatory message. They do not claim to translate until the speech pipeline is connected.
+The microphone buttons now run the local Whisper recognition path. Translation models are downloaded by ML Kit when a language pair is first used; first-time model download therefore needs internet. The full app still requires a successful CI build and real-device testing before it should be treated as a finished translator.
 
 ## Planned architecture
 
