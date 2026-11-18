@@ -80,6 +80,7 @@ class HuanSpeechController(context: Context) {
                         instanceFollowRedirects = true
                     }
                     connection.connect()
+                    if (connection.responseCode !in 200..299) error("HTTP " + connection.responseCode)
                     val total = connection.contentLengthLong
                     connection.inputStream.use { input ->
                         part.outputStream().use { output ->
@@ -98,7 +99,7 @@ class HuanSpeechController(context: Context) {
                         }
                     }
                     connection.disconnect()
-                    if (part.length() < 100_000_000L) error("Скачанный файл слишком мал: загрузка прервана")
+                    if (part.length() < 400_000_000L) error("Файл Whisper неполный: загрузка прервана")
                     if (!part.renameTo(modelFile)) {
                         part.copyTo(modelFile, overwrite = true)
                         part.delete()
@@ -243,10 +244,15 @@ class HuanSpeechController(context: Context) {
             else -> Locale.ENGLISH
         }
         val engine = tts ?: return
-        val availability = engine.setLanguage(locale)
-        if (availability >= TextToSpeech.LANG_AVAILABLE) {
-            engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "huan-${System.currentTimeMillis()}")
+        val offlineVoice = engine.voices
+            ?.filter { it.locale.language == locale.language && !it.isNetworkConnectionRequired }
+            ?.maxByOrNull { it.quality }
+        if (offlineVoice == null) {
+            _state.value = _state.value.copy(status = _state.value.status + " · Нет установленного офлайн-голоса для озвучивания")
+            return
         }
+        engine.voice = offlineVoice
+        engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "huan-" + System.currentTimeMillis())
     }
 
     fun clear() {
