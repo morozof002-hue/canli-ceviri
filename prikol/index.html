@@ -50,6 +50,17 @@ button:active{transform:translateY(2px);box-shadow:0 1px 0 #8e8e82}
 (()=>{
  const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
  const scoreEl=document.getElementById('score'),bestEl=document.getElementById('best'),statusEl=document.getElementById('status');
+ const audioCtx=window.AudioContext?new AudioContext():null;
+ function playLoseSound(){
+  if(!audioCtx)return;
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  const now=audioCtx.currentTime;
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),filter=audioCtx.createBiquadFilter();
+  osc.type='sawtooth';filter.type='lowpass';filter.frequency.setValueAtTime(850,now);filter.frequency.exponentialRampToValueAtTime(260,now+0.85);
+  osc.frequency.setValueAtTime(430,now);osc.frequency.exponentialRampToValueAtTime(155,now+0.85);
+  gain.gain.setValueAtTime(0.0001,now);gain.gain.exponentialRampToValueAtTime(0.12,now+0.08);gain.gain.setValueAtTime(0.10,now+0.48);gain.gain.exponentialRampToValueAtTime(0.0001,now+0.9);
+  osc.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);osc.start(now);osc.stop(now+0.92);
+ }
  const N=20,CELL=16;let snake,dir,nextDir,food,score,timer,running=false,paused=false;
  let best=Number(localStorage.getItem('prikol-snake-best')||0);bestEl.textContent=best;
  const dirs={up:{x:0,y:-1},down:{x:0,y:1},left:{x:-1,y:0},right:{x:1,y:0}};
@@ -70,7 +81,7 @@ button:active{transform:translateY(2px);box-shadow:0 1px 0 #8e8e82}
   snake.unshift(head);if(eating){score+=10;scoreEl.textContent=score;if(score>best){best=score;bestEl.textContent=best;localStorage.setItem('prikol-snake-best',best);}placeFood();}else snake.pop();draw();
  }
  function start(){if(running)return;if(paused){paused=false;running=true;statusEl.textContent='';draw();timer=setInterval(tick,Math.max(65,145-Math.floor(score/50)*8));return;}reset();running=true;statusEl.textContent='';draw();timer=setInterval(tick,145);}
- function end(){clearInterval(timer);running=false;paused=false;statusEl.textContent='ИГРА ОКОНЧЕНА • '+score+' ОЧКОВ';draw();}
+ function end(){clearInterval(timer);running=false;paused=false;statusEl.textContent='ИГРА ОКОНЧЕНА • '+score+' ОЧКОВ';draw();playLoseSound();}
  function pause(){if(!running){if(paused)start();return;}clearInterval(timer);running=false;paused=true;statusEl.textContent='';draw();}
  function turn(d){if(!dirs[d])return;const a=dirs[dir],b=dirs[d];if(a.x+b.x===0&&a.y+b.y===0)return;nextDir=d;if(!running&&!paused)start();}
  document.getElementById('start').addEventListener('click',start);
