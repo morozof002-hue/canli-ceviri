@@ -113,7 +113,7 @@ class HuanSpeechController(context: Context) {
     }
 
     fun startRecording(language: String?, autoFinishOnSilence: Boolean) {
-        if (_state.value.recording || _state.value.processing || _state.value.downloading) return
+        if (_state.value.recording || _state.value.processing || _state.value.downloading || recordingJob?.isActive == true) return
         if (!modelFile.exists()) {
             _state.value = _state.value.copy(error = "Сначала скачайте модель Whisper")
             return
@@ -145,7 +145,10 @@ class HuanSpeechController(context: Context) {
                 val buffer = ShortArray(1024)
                 var voiceSeen = false
                 var silentSamples = 0L
+                var initialSilentSamples = 0L
                 val silenceLimit = 16_000L * 1.1
+                // Не даём Whisper распознавать тишину: через 5 секунд без речи завершаем пустую запись.
+                val initialSilenceLimit = 16_000L * 5
                 val maxSamples = 16_000L * 25
                 while (!stopRequested && recordingSamples.size < maxSamples) {
                     val n = audio.read(buffer, 0, buffer.size)
@@ -158,14 +161,18 @@ class HuanSpeechController(context: Context) {
                         silentSamples = 0
                     } else if (voiceSeen) {
                         silentSamples += n
+                    } else {
+                        initialSilentSamples += n
                     }
                     for (i in 0 until n) recordingSamples.add(buffer[i])
+                    if (!voiceSeen && initialSilentSamples >= initialSilenceLimit) break
                     if (autoFinishOnSilence && voiceSeen && silentSamples >= silenceLimit) break
                 }
                 runCatching { audio.stop() }
                 audio.release()
                 recorder = null
                 _state.value = _state.value.copy(recording = false, processing = true, status = "Распознавание речи…")
+                if (!voiceSeen) error("Речь не обнаружена. Нажмите кнопку и начните говорить.")
                 if (recordingSamples.size < 4_000) error("Слишком короткая запись. Попробуйте ещё раз.")
                 val pcm = FloatArray(recordingSamples.size) { recordingSamples[it] / 32768f }
                 val first = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_1", "ru") ?: "ru"
@@ -176,7 +183,9 @@ class HuanSpeechController(context: Context) {
                 val result = withContext(Dispatchers.Default) {
                     model.transcribeWithRetry(pcm, chosenLanguage, threads = WhisperModel.DEFAULT_THREADS, maxTokens = 180)
                 }
-                if (!result.ok || result.text.isBlank()) error("Не удалось распознать речь. Попробуйте говорить ближе к микрофону.")
+                if (!result.ok || result.text.isBlank() || result.noSpeechProb >= 0.6f) {
+                    error("Чёткая речь не обнаружена. Попробуйте ещё раз и говорите ближе к микрофону.")
+                }
                 _state.value = _state.value.copy(sourceText = result.text, status = "Перевод…")
                 val detected = result.lang.ifBlank { chosenLanguage ?: first }
                 if (detected != first && detected != second) error("Определён язык вне выбранной пары: $detected")
