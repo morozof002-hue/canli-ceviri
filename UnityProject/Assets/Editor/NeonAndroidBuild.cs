@@ -20,6 +20,14 @@ public static class NeonAndroidBuild
         Debug.Log("NEON COAST Android settings configured: ARM64, IL2CPP, min API 26, landscape.");
     }
 
+    // Entry point used by GitHub Actions. Always generate the district before building.
+    public static void BuildForCI()
+    {
+        Configure();
+        NeonCoastSceneBuilder.Build();
+        Build();
+    }
+
     [MenuItem("NEON COAST/Build Android APK")]
     public static void Build()
     {
