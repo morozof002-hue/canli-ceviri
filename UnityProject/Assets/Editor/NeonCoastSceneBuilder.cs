@@ -11,6 +11,7 @@ public static class NeonCoastSceneBuilder
     public static void Build()
     {
         Scene scene=EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects,NewSceneMode.Single);
+        if(!AssetDatabase.IsValidFolder("Assets/Scenes")) AssetDatabase.CreateFolder("Assets","Scenes");
         RenderSettings.ambientMode=AmbientMode.Trilight;
         RenderSettings.ambientSkyColor=new Color(.42f,.55f,.68f);
         RenderSettings.ambientEquatorColor=new Color(.28f,.31f,.34f);
