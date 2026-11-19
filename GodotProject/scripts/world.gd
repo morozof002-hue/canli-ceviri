@@ -69,7 +69,12 @@ func _build_world() -> void:
 		var x := -72.0 + float(i) * 11.0
 		var depth := 10.0 + float((i * 7) % 4) * 3.0
 		var h := 9.0 + float((i * 13) % 5) * 3.2
-		var color := [Color(0.83,0.48,0.31), Color(0.32,0.48,0.59), Color(0.82,0.71,0.51), Color(0.46,0.35,0.48)][i % 4]
+		var color: Color
+		match i % 4:
+			0: color = Color(0.83,0.48,0.31)
+			1: color = Color(0.32,0.48,0.59)
+			2: color = Color(0.82,0.71,0.51)
+			_: color = Color(0.46,0.35,0.48)
 		_make_building(Vector3(x, h/2.0, -2.0 - depth/2.0), Vector3(8.0,h,depth), color)
 		_make_building(Vector3(x+3.5, h*0.34, 35.0), Vector3(6.0,h*0.68,10.0), color.darkened(0.18))
 	for x in range(-75, 80, 15):
@@ -103,8 +108,8 @@ func _make_box(n: String, p: Vector3, s: Vector3, c: Color) -> MeshInstance3D:
 func _make_building(p: Vector3, s: Vector3, c: Color) -> void:
 	_make_box("Art-deco block", p, s, c)
 	for floor in range(1, int(s.y/2.6)):
-		for side in [-1,1]:
-			var z := p.z + side * (s.z/2.0 + 0.035)
+		for side: int in [-1,1]:
+			var z: float = p.z + float(side) * (s.z/2.0 + 0.035)
 			for wx in range(1, int(s.x/1.8)):
 				var x := p.x - s.x/2.0 + float(wx)*1.8
 				_make_box("Lit window", Vector3(x,p.y-s.y/2.0+1.5+floor*2.6,z), Vector3(0.8,1.15,0.08), Color(0.15,0.65,0.78) if (wx+floor)%3 else Color(1.0,0.67,0.32))
