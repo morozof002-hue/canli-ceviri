@@ -69,7 +69,7 @@ select option{background:#11172a}
 </div>
 <div class="arena-wrap"><div class="arena"><canvas id="game" aria-label="Игровое поле ZZZ"></canvas>
 <div class="overlay" id="overlay"><div class="modal"><div class="eyebrow" id="eyebrow">ARCADE EXPERIENCE</div><h1 id="overlayTitle">ГОТОВ<br>К ЗАПУСКУ?</h1><p id="overlayText">Собирай энергоядра, расти и не врезайся в собственный хвост. Твой новый рекорд начинается здесь.</p><button class="primary" id="mainAction">НАЧАТЬ ИГРУ</button><button class="secondary" id="overlaySecondary">КАК ИГРАТЬ</button></div></div></div></div>
-<div class="quick"><div class="quick-left"><span class="tag" id="modeTag">РЕЖИМ: CLASSIC</span><span class="tag" id="skinTag">SKIN: CYBER</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="small-btn" id="voiceTestBtn">🐍 ПРОВЕРИТЬ ГОЛОС</button><button class="small-btn" id="soundBtn">♫ ЗВУК: ВКЛ</button></div></div>
+<div class="quick"><div class="quick-left"><span class="tag" id="modeTag">РЕЖИМ: CLASSIC</span><span class="tag" id="skinTag">SKIN: CYBER</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="small-btn" id="voiceTestBtn">🐍 ПРОВЕРИТЬ ГОЛОС</button><button class="small-btn" id="jokeBtn">🤣 ПОДКОЛИ МЕНЯ</button><button class="small-btn" id="soundBtn">♫ ЗВУК: ВКЛ</button></div></div>
 <div class="controls">
  <div class="dpad" aria-label="Управление"><button class="up" data-dir="up">▲</button><button class="left" data-dir="left">◀</button><button class="down" data-dir="down">▼</button><button class="right" data-dir="right">▶</button></div>
  <div class="action-stack"><button class="small-btn" id="pauseBtn">Ⅱ ПАУЗА</button><button class="small-btn" id="restartBtn">↻ ЗАНОВО</button></div>
@@ -93,6 +93,19 @@ new ResizeObserver(resize).observe(canvas);
 function tone(freq,duration,type='sine',volume=.045){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(volume,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration);}catch(e){}}
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1500)}
 function snakeTalk(message){if(!soundOn)return;try{if(window.snakeVoice&&typeof window.snakeVoice.speak==='function'){window.snakeVoice.speak(message);return}if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){const voiceLine=new SpeechSynthesisUtterance(message);voiceLine.lang='ru-RU';voiceLine.rate=1.0;voiceLine.pitch=.86;voiceLine.volume=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(voiceLine)}}catch(e){toast('ОШИБКА ОЗВУЧКИ') }}
+const snakeJokes=[
+'Ты рулишь или просто экран греешь?',
+'Мой хвост умнее твоего плана!',
+'Ещё один кубик — и я требую отпуск!',
+'Не моргай. Я тут вообще-то работаю!',
+'У тебя палец быстрее мысли?',
+'Я змея, а не навигатор. Куда едем?',
+'С таким рулением нам нужен ремень безопасности!',
+'Кубик вижу. Твои шансы — не очень.',
+'Я расту, а ты всё ещё учишься поворачивать.',
+'Спокойно, капитан. Паника не ускоряет реакцию!'
+];
+function joke(){const line=snakeJokes[Math.floor(Math.random()*snakeJokes.length)];toast(line);snakeTalk(line)}
 function testSnakeVoice(){if(!soundOn){toast('СНАЧАЛА ВКЛЮЧИ ЗВУК');return}try{if(window.snakeVoice&&typeof window.snakeVoice.speak==='function'){const ready=window.snakeVoice.isReady&&window.snakeVoice.isReady();const status=window.snakeVoice.getStatus?window.snakeVoice.getStatus():'Статус голоса неизвестен';window.snakeVoice.speak('Привет! Я твоя змея. Проверка голоса.');if(!ready){toast(status+' — открываю установку голоса');if(window.snakeVoice.installRussianVoice)window.snakeVoice.installRussianVoice()}else toast('РУССКИЙ ГОЛОС ЗАПУЩЕН');return}if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){snakeTalk('Привет! Я твоя змея. Проверка голоса.');toast('ПРОВЕРКА ГОЛОСА');return}toast('ОЗВУЧИВАНИЕ НЕ ПОДДЕРЖИВАЕТСЯ')}catch(e){toast('ОШИБКА: '+e.message)}}
 function bestLoad(){best=Number(localStorage.getItem(storeKey())||0);$('best').textContent=String(best).padStart(3,'0')}
 function updateStats(){$('score').textContent=String(score).padStart(3,'0');$('level').textContent=String(level).padStart(2,'0');$('best').textContent=String(best).padStart(3,'0')}
@@ -111,7 +124,7 @@ else if(h.x<0||h.x>=N||h.y<0||h.y>=N){gameOver();return}
 const eating=h.x===food.x&&h.y===food.y,body=eating?snake:snake.slice(0,-1);
 if(body.some(p=>p.x===h.x&&p.y===h.y)){gameOver();return}
 snake.unshift(h);
-if(eating){snakeTalk('Заебца');burst(food.x,food.y,skins[skin].glow);score+=10;level=1+Math.floor(score/80);step=Math.max(mode==='rush'?54:mode==='zen'?90:65,(mode==='rush'?82:mode==='zen'?145:125)-(level-1)*5);foodSpawn();tone(650,.08,'sine');setTimeout(()=>tone(880,.1,'triangle'),55);if(score>best){best=score;localStorage.setItem(storeKey(),best)}updateStats()}else snake.pop()}
+if(eating){const foodLines=['Заебца','О, харош!','Ещё кубик в копилочку!','М-м-м, пиксельный деликатес!','Я расту, а ты нервничаешь!'];snakeTalk(foodLines[Math.floor(Math.random()*foodLines.length)]);if(score>0&&((score+10)%50===0)){setTimeout(()=>snakeTalk('Пятьдесят очков! Кто тут легенда?'),500);toast('🔥 '+(score+10)+' ОЧКОВ! ТЫ МАШИНА!')}burst(food.x,food.y,skins[skin].glow);score+=10;level=1+Math.floor(score/80);step=Math.max(mode==='rush'?54:mode==='zen'?90:65,(mode==='rush'?82:mode==='zen'?145:125)-(level-1)*5);foodSpawn();tone(650,.08,'sine');setTimeout(()=>tone(880,.1,'triangle'),55);if(score>best){best=score;localStorage.setItem(storeKey(),best)}updateStats()}else snake.pop()}
 function loop(now){if(!running)return;const dt=Math.min(50,now-last);last=now;acc+=dt;while(acc>=step&&running){tick();acc-=step}updateParticles(dt/1000);foodPulse+=dt/1000;draw();if(running)raf=requestAnimationFrame(loop)}
 function updateParticles(dt){particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.vx*=.97;p.vy*=.97}}
 function draw(){const w=canvas.clientWidth||320,h=canvas.clientHeight||320;if(!w||!h)return;const cell=w/N;ctx.clearRect(0,0,w,h);
@@ -130,7 +143,7 @@ $('overlaySecondary').addEventListener('click',()=>{if(paused){reset();return}sh
 $('pauseBtn').addEventListener('click',()=>{if(running)pause();else if(paused)start();else if(dead){reset()}});
 $('restartBtn').addEventListener('click',()=>{reset();toast('НОВАЯ СЕССИЯ')});
 $('mode').addEventListener('change',setMode);$('skin').addEventListener('change',setSkin);
-$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'♫ ЗВУК: ВКЛ':'♫ ЗВУК: ВЫКЛ';if(soundOn)tone(700,.1)});$('voiceTestBtn').addEventListener('click',testSnakeVoice);
+$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'♫ ЗВУК: ВКЛ':'♫ ЗВУК: ВЫКЛ';if(soundOn)tone(700,.1)});$('voiceTestBtn').addEventListener('click',testSnakeVoice);$('jokeBtn').addEventListener('click',joke);
 document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();turn(b.dataset.dir)}));
 document.addEventListener('keydown',e=>{const map={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};if(map[e.key]){e.preventDefault();turn(map[e.key])}if(e.code==='Space'){e.preventDefault();running?pause():start()}});
 let sx=0,sy=0;canvas.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener('pointerup',e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.max(Math.abs(dx),Math.abs(dy))>16)turn(Math.abs(dx)>Math.abs(dy)?dx>0?'right':'left':dy>0?'down':'up')});
