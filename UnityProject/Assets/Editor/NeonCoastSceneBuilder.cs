@@ -58,7 +58,7 @@ public static class NeonCoastSceneBuilder
         var controller=player.AddComponent<NeonPlayerController>();
         var interaction=player.AddComponent<NeonVehicleInteraction>();
         var camera=Camera.main;camera.name="Third Person Camera";var orbit=camera.gameObject.AddComponent<NeonOrbitCamera>();orbit.target=player.transform;controller.cameraTransform=camera.transform;
-        var hud=new GameObject("Mobile HUD").AddComponent<NeonTouchHUD>();hud.player=controller;hud.interaction=interaction;
+        var hud=new GameObject("Mobile HUD").AddComponent<NeonTouchHUD>();hud.player=controller;hud.interaction=interaction;\n        var systems=new GameObject("Game Systems");systems.AddComponent<NeonPerformanceProfile>();var save=systems.AddComponent<NeonSaveSystem>();save.player=player.transform;
         camera.transform.position=new Vector3(0,4,18);camera.transform.LookAt(player.transform.position+Vector3.up*1.3f);
         // sunset key light
         var sun=GameObject.Find("Directional Light");sun.transform.rotation=Quaternion.Euler(35,-28,0);sun.GetComponent<Light>().intensity=1.25f;
