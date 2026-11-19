@@ -269,3 +269,5 @@ func _toggle_vehicle() -> void:
 		player.set_physics_process(true)
 		car.set_physics_process(false)
 		player.get_node("Camera3D").current = true
+
+# Android CI rebuild trigger after export environment setup.
