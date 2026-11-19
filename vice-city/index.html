@@ -32,6 +32,8 @@ const buildings=[];for(let x=-4;x<=4;x++)for(let z=-4;z<=4;z++){if(Math.abs(x)%2
 const player={x:0,z:7,yaw:0,car:null};const cars=[{x:0,z:0,yaw:0,color:colors.red,speed:0},{x:-13,z:-8,yaw:1.2,color:colors.yellow,speed:0},{x:22,z:20,yaw:3,color:colors.blue,speed:0}];let target={x:0,z:36};
 function collide(obj,r){for(const b of buildings){const hx=b.w/2+r,hz=b.d/2+r,dx=obj.x-b.x,dz=obj.z-b.z;if(Math.abs(dx)<hx&&Math.abs(dz)<hz){const px=hx-Math.abs(dx),pz=hz-Math.abs(dz);if(px<pz)obj.x=b.x+Math.sign(dx||1)*hx;else obj.z=b.z+Math.sign(dz||1)*hz}}obj.x=Math.max(-84,Math.min(84,obj.x));obj.z=Math.max(-84,Math.min(84,obj.z))}
 const traffic=[];for(let i=0;i<10;i++)traffic.push({x:-55+i*12,z:i%2?2:-2,yaw:0,color:i%3?colors.white:colors.blue,speed:2.2+(i%3)*.3});
+// Sidewalk pedestrians make the boulevard feel inhabited.
+const pedestrians=[];for(let i=0;i<8;i++)pedestrians.push({x:-66+i*18,z:i%2?4.65:-4.65,phase:i*.9,speed:1.1+(i%3)*.22,dir:i%2?1:-1,shirt:[[.78,.31,.22,1],[.18,.43,.62,1],[.82,.68,.32,1],[.35,.58,.38,1]][i%4]});
 let keys={},running=false,cash=250,entered=false,VP,aspect=1,last=0;
 document.querySelectorAll('[data-k]').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true});['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
 addEventListener('keydown',e=>{let m={ArrowUp:'f',w:'f',ArrowDown:'b',s:'b',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r'};if(m[e.key])keys[m[e.key]]=true});addEventListener('keyup',e=>{let m={ArrowUp:'f',w:'f',ArrowDown:'b',s:'b',ArrowLeft:'l',a:'l',ArrowRight:'r',d:'r'};if(m[e.key])keys[m[e.key]]=false});
@@ -41,6 +43,7 @@ function resize(){let d=Math.min(devicePixelRatio||1,1.7);canvas.width=Math.floo
 function drawCar(c){box(c.x,.52,c.z,1.55,.48,.78,c.color,c.yaw);box(c.x,.98,c.z, .82,.43,.67,colors.glass,c.yaw);for(let side of [-1,1]){box(c.x+Math.cos(c.yaw)*.95,.2,c.z-Math.sin(c.yaw)*.95,.23,.23,.15,[.035,.04,.045,1],c.yaw);box(c.x-Math.cos(c.yaw)*.95,.2,c.z+Math.sin(c.yaw)*.95,.23,.23,.15,[.035,.04,.045,1],c.yaw)}}
 function render(t){let dt=Math.min(.04,(t-last)/1000||.016);last=t;const v=player.car||player;let turn=(keys.r?1:0)-(keys.l?1:0),forward=(keys.f?1:0)-(keys.b?1:0);if(player.car){v.yaw+=turn*dt*2.1;v.speed+=(forward*13*dt);v.speed*=Math.pow(.985,dt*60);v.speed=Math.max(-4,Math.min(13,v.speed));const ox=v.x,oz=v.z;v.x+=Math.sin(v.yaw)*v.speed*dt;v.z+=Math.cos(v.yaw)*v.speed*dt;collide(v,1.65);if(v.x!==ox||v.z!==oz)v.speed*=.25}else{player.yaw+=turn*dt*2.4;let sp=running?8:4.2;player.x+=Math.sin(player.yaw)*forward*sp*dt;player.z+=Math.cos(player.yaw)*forward*sp*dt;collide(player,.48)}
 traffic.forEach(c=>{c.x+=c.speed*dt;if(c.x>65)c.x=-65});
+pedestrians.forEach(p=>{p.x+=p.speed*p.dir*dt;p.phase+=dt*7;if(p.x>72){p.x=72;p.dir=-1}else if(p.x< -72){p.x=-72;p.dir=1}});
 if(Math.hypot(v.x-target.x,v.z-target.z)<5){cash+=500;document.getElementById('cash').textContent='$ '+cash;target=target.z>0?{x:-36,z:-36}:{x:0,z:36};document.getElementById('mission').innerHTML='ЗАДАНИЕ ВЫПОЛНЕНО<br>+$500 · Следующая точка отмечена';}
 document.getElementById('mission').innerHTML='ТОЧКА НАЗНАЧЕНИЯ<br>'+Math.round(Math.hypot(v.x-target.x,v.z-target.z))+' м · награда $500';
 document.getElementById('mode').textContent=player.car?'ЗА РУЛЁМ':'ПЕШКОМ';const dir=[Math.sin(v.yaw),0,Math.cos(v.yaw)],eye=[v.x-dir[0]*10,5.8,v.z-dir[2]*10],center=[v.x+dir[0]*2,1.2,v.z+dir[2]*2];VP=matMul(perspective(1.02,aspect,.1,180),lookAt(eye,center,[0,1,0]));
@@ -75,6 +78,8 @@ let pulse=1+Math.sin(t*.004)*.12;
 box(target.x,.55,target.z,.55*pulse,.55*pulse,.55*pulse,colors.glow);
 box(target.x,1.55,target.z,.12,1.05,.12,colors.red);
 cars.forEach(drawCar);traffic.forEach(drawCar);
+// Low-poly pedestrians with animated arms and legs.
+pedestrians.forEach(p=>{let swing=Math.sin(p.phase)*.16;box(p.x,.92,p.z,.27,.48,.22,p.shirt);box(p.x,1.53,p.z,.21,.21,.21,colors.skin);box(p.x-.31,.91,p.z,.075,.34,.075,p.shirt,swing);box(p.x+.31,.91,p.z,.075,.34,.075,p.shirt,-swing);box(p.x-.12,.36+swing,p.z,.095,.36,.11,[.12,.16,.22,1],swing);box(p.x+.12,.36-swing,p.z,.095,.36,.11,[.12,.16,.22,1],-swing)});
 if(!player.car){box(player.x,.86,player.z,.34,.62,.28,colors.shirt,player.yaw);box(player.x,1.62,player.z,.25,.25,.25,colors.skin,player.yaw);box(player.x+.22,.48,player.z,.12,.48,.13,[.12,.16,.22,1],player.yaw);box(player.x-.22,.48,player.z,.12,.48,.13,[.12,.16,.22,1],player.yaw);box(player.x+.39,.92,player.z,.1,.42,.11,colors.skin,player.yaw);box(player.x-.39,.92,player.z,.1,.42,.11,colors.skin,player.yaw);box(player.x,.15,player.z,.38,.12,.32,[.07,.08,.1,1],player.yaw)}
 // A subtle sun disk and distant coastal skyline.
 box(58,24,-72,5,5,.5,[1,.77,.43,1]);
