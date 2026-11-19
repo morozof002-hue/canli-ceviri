@@ -25,7 +25,7 @@ public class NeonVehicleController : MonoBehaviour
     public void SetInput(Vector2 value){mobileInput=Vector2.ClampMagnitude(value,1f);}
     void FixedUpdate()
     {
-        if(!controlled) { body.AddForce(-transform.up*9.81f,ForceMode.Acceleration); return; }
+        if(!controlled) return;
         Vector2 input=mobileInput;
 #if ENABLE_LEGACY_INPUT_MANAGER
         if(input.sqrMagnitude<.01f) input=new Vector2(Input.GetAxisRaw("Horizontal"),Input.GetAxisRaw("Vertical"));
