@@ -33,7 +33,6 @@ jobs:
           unityVersion: 6000.0.40f1
           targetPlatform: Android
           buildMethod: NeonAndroidBuild.BuildForCI
-          androidAppBundle: false
           buildsPath: build
 
       - name: Upload APK
