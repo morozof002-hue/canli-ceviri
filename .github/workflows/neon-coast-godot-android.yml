@@ -79,6 +79,7 @@ jobs:
         run: godot --headless --editor --path . --import
 
       - name: Export Android APK
+        shell: bash
         working-directory: GodotProject
         run: |
           set -euo pipefail
