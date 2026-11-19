@@ -2,6 +2,7 @@ package ru.prikol.snake;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.content.Intent;
 import android.speech.tts.TextToSpeech;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -44,6 +45,19 @@ public class MainActivity extends Activity {
         public String getStatus() {
             return ttsStatus;
         }
+
+        @JavascriptInterface
+        public boolean installRussianVoice() {
+            try {
+                Intent install = new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+                install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(install);
+                return true;
+            } catch (Exception e) {
+                ttsStatus = "Не удалось открыть установку голосовых данных";
+                return false;
+            }
+        }
     }
 
     private void speakNow(String message) {
@@ -67,12 +81,12 @@ public class MainActivity extends Activity {
             int language = tts.setLanguage(new Locale("ru", "RU"));
             if (language == TextToSpeech.LANG_MISSING_DATA) {
                 ttsReady = false;
-                ttsStatus = "Не установлены голосовые данные русского языка";
+                ttsStatus = "Не установлены голосовые данные русского языка. Нажми ПРОВЕРИТЬ ГОЛОС для установки.";
                 return;
             }
             if (language == TextToSpeech.LANG_NOT_SUPPORTED) {
                 ttsReady = false;
-                ttsStatus = "Синтезатор не поддерживает русский язык";
+                ttsStatus = "Выбранный синтезатор не поддерживает русский язык. Установи другой движок TTS.";
                 return;
             }
             tts.setSpeechRate(1.0f);
