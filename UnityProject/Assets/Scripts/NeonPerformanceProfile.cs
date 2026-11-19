@@ -3,7 +3,7 @@ using UnityEngine;
 public class NeonPerformanceProfile : MonoBehaviour
 {
     [Range(30,60)] public int targetFps=30;
-    public bool allow60FpsOnFastDevices=true;
+    public bool allow60FpsOnFastDevices=false;
     void Awake()
     {
         Application.targetFrameRate=targetFps;
