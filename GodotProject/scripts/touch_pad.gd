@@ -47,5 +47,9 @@ func _update_stick(pos: Vector2, base: Vector2) -> void:
 
 func _send_move() -> void:
 	var world := get_tree().current_scene
-	if world and world.has_node("Player"):
-		world.get_node("Player").touch_move = stick_vector
+	if world and world.has_node("Player") and world.has_node("Car"):
+		if world.in_car:
+			world.get_node("Car").throttle_touch = -stick_vector.y
+			world.get_node("Car").steering_touch = stick_vector.x
+		else:
+			world.get_node("Player").touch_move = stick_vector
