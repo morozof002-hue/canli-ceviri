@@ -21,7 +21,7 @@ public class NeonTouchHUD : MonoBehaviour
         GUI.Label(new Rect(24*s,74*s,260*s,26*s),"Explore the coast  •  1980s",small);
         GUI.Box(stick,"");
         GUI.Label(new Rect(stick.x+26*s,stick.y+stick.height+4*s,160*s,22*s),"MOVE",small);
-        if(GUI.Button(sprintButton,"SPRINT")) player.SetSprint(true);
+        if(GUI.RepeatButton(sprintButton,"SPRINT")) player.SetSprint(true);
         if(GUI.Button(jumpButton,"JUMP")) player.RequestJump();
         HandleStick();
     }
