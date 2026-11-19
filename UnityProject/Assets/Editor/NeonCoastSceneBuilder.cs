@@ -21,8 +21,8 @@ public static class NeonCoastSceneBuilder
         matSea=Mat("Mediterranean water",new Color(.025f,.31f,.39f)); matGlass=Mat("Blue glass",new Color(.10f,.24f,.29f),.55f);
         matWhite=Mat("Warm white",new Color(.83f,.78f,.66f)); matWarm=Mat("Terracotta",new Color(.62f,.29f,.18f));
         matPalm=Mat("Palm green",new Color(.10f,.24f,.12f)); matAsphalt=Mat("Building cream",new Color(.69f,.61f,.48f));
-        Cube("Ground",new Vector3(0,-.6f,0),new Vector3(220,1,220),matSand);
-        Cube("Sea",new Vector3(0,-.3f,105),new Vector3(220,.5f,55),matSea);
+        Cube("Ground",new Vector3(0,-.6f,-20),new Vector3(220,1,160),matSand);
+        GameObject sea=Cube("Sea",new Vector3(0,-.3f,105),new Vector3(220,.5f,55),matSea);Object.DestroyImmediate(sea.GetComponent<Collider>());
         Cube("Beach",new Vector3(0,-.05f,73),new Vector3(220,.3f,13),matSand);
         Cube("Coastal promenade",new Vector3(0,.05f,61),new Vector3(220,.35f,5),matSide);
         // street grid with two main avenues
@@ -35,14 +35,16 @@ public static class NeonCoastSceneBuilder
         for(int x=-75;x<=75;x+=30) for(int z=-48;z<=42;z+=30)
         {
             if(z>28 && Mathf.Abs(x)<46) continue;
-            float h=Random.Range(13f,28f); Vector3 p=new Vector3(x+Random.Range(-3f,3f),h/2,z+Random.Range(-3f,3f));
+            float h=Random.Range(13f,28f);float width=Random.Range(15f,20f);float depth=Random.Range(15f,19f);Vector3 p=new Vector3(x+Random.Range(-3f,3f),h/2,z+Random.Range(-3f,3f));
             Material facade=Random.value>.5f?matWhite:matAsphalt;
-            Cube("Coastal apartment",p,new Vector3(Random.Range(15f,20f),h,Random.Range(15f,19f)),facade);
+            Cube("Coastal apartment",p,new Vector3(width,h,depth),facade);
             for(int floor=1;floor<h/3.2f;floor++) for(int wx=-1;wx<=1;wx++)
             {
-                Vector3 w=p+new Vector3(wx*4.5f,-h/2+floor*3.2f,-9.55f);
+                Vector3 w=p+new Vector3(wx*width*.29f,-h/2+floor*3.2f,-depth/2-.07f);
                 Cube("Window",w,new Vector3(2.3f,1.55f,.12f),matGlass);
                 Cube("Balcony",w+new Vector3(0,-.95f,-.45f),new Vector3(2.8f,.12f,1),matSide);
+                Vector3 back=p+new Vector3(wx*width*.29f,-h/2+floor*3.2f,depth/2+.07f);
+                Cube("Rear window",back,new Vector3(2.3f,1.55f,.12f),matGlass);
             }
             Cube("Roof cap",p+Vector3.up*(h/2+.35f),new Vector3(20,.7f,19),matWarm);
         }
