@@ -8,8 +8,8 @@
 (()=>{'use strict';
 const canvas=document.getElementById('view'),gl=canvas.getContext('webgl',{antialias:true,alpha:false})||canvas.getContext('experimental-webgl');
 if(!gl){document.getElementById('hint').textContent='WebGL недоступен на этом устройстве';return}
-const vs=`attribute vec3 p;attribute vec3 n;uniform mat4 mvp;uniform mat4 model;varying float light;void main(){gl_Position=mvp*vec4(p,1.);vec3 nn=normalize(mat3(model)*n);light=.48+.52*max(dot(nn,normalize(vec3(-.4,.9,.35))),0.);}`;
-const fs=`precision mediump float;uniform vec4 tint;varying float light;void main(){gl_FragColor=vec4(tint.rgb*light,tint.a);}`;
+const vs=`attribute vec3 p;attribute vec3 n;uniform mat4 mvp;uniform mat4 model;varying float light;varying float fogDepth;void main(){gl_Position=mvp*vec4(p,1.);vec3 nn=normalize(mat3(model)*n);light=.38+.62*max(dot(nn,normalize(vec3(-.45,.86,.32))),0.);fogDepth=gl_Position.w;}`;
+const fs=`precision mediump float;uniform vec4 tint;uniform vec3 fogColor;varying float light;varying float fogDepth;void main(){float fog=smoothstep(48.0,128.0,fogDepth);vec3 lit=tint.rgb*light;gl_FragColor=vec4(mix(lit,fogColor,fog),tint.a);}`;
 function shader(type,src){let s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(s);return s}
 const prog=gl.createProgram();gl.attachShader(prog,shader(gl.VERTEX_SHADER,vs));gl.attachShader(prog,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);gl.useProgram(prog);
 const cube=[-1,-1,-1,0,0,-1,1,-1,-1,0,0,-1,1,1,-1,0,0,-1,-1,-1,-1,0,0,-1,1,1,-1,0,0,-1,-1,1,-1,0,0,-1,
@@ -20,13 +20,18 @@ const cube=[-1,-1,-1,0,0,-1,1,-1,-1,0,0,-1,1,1,-1,0,0,-1,-1,-1,-1,0,0,-1,1,1,-1,
 -1,1,-1,0,1,0,1,1,-1,0,1,0,1,1,1,0,1,0,-1,1,-1,0,1,0,1,1,1,0,1,0,-1,1,1,0,1,0];
 const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(cube),gl.STATIC_DRAW);
 const stride=24,pp=gl.getAttribLocation(prog,'p'),nn=gl.getAttribLocation(prog,'n');gl.enableVertexAttribArray(pp);gl.vertexAttribPointer(pp,3,gl.FLOAT,false,stride,0);gl.enableVertexAttribArray(nn);gl.vertexAttribPointer(nn,3,gl.FLOAT,false,stride,12);
-const um=gl.getUniformLocation(prog,'mvp'),uModel=gl.getUniformLocation(prog,'model'),uTint=gl.getUniformLocation(prog,'tint');
+const um=gl.getUniformLocation(prog,'mvp'),uModel=gl.getUniformLocation(prog,'model'),uTint=gl.getUniformLocation(prog,'tint'),uFog=gl.getUniformLocation(prog,'fogColor');
+// Smooth low-poly sphere mesh for rounded character, foliage and vehicle details.
+function makeSphere(){let out=[],lat=9,lon=12;for(let y=0;y<lat;y++){let a0=Math.PI*y/lat,a1=Math.PI*(y+1)/lat;for(let x=0;x<lon;x++){let b0=2*Math.PI*x/lon,b1=2*Math.PI*(x+1)/lon;let v=(a,b)=>[Math.sin(a)*Math.cos(b),Math.cos(a),Math.sin(a)*Math.sin(b)];let q=[v(a0,b0),v(a1,b0),v(a1,b1),v(a0,b0),v(a1,b1),v(a0,b1)];for(const p of q)out.push(...p,...p)}}return new Float32Array(out)}
+const sphereBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,sphereBuf);gl.bufferData(gl.ARRAY_BUFFER,makeSphere(),gl.STATIC_DRAW);const sphereCount=makeSphere().length/6;
+function bindGeometry(b){gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.vertexAttribPointer(pp,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(nn,3,gl.FLOAT,false,24,12)}
 function matMul(a,b){let o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
 function perspective(fov,aspect,near,far){let f=1/Math.tan(fov/2),nf=1/(near-far);return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0])}
 function lookAt(eye,center,up){let z=norm(sub(eye,center)),x=norm(cross(up,z)),y=cross(z,x);return new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1])}
 const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>{let l=Math.hypot(...a)||1;return a.map(v=>v/l)};
 function model(x,y,z,sx,sy,sz,yaw=0){let c=Math.cos(yaw),s=Math.sin(yaw);return new Float32Array([c*sx,0,-s*sx,0,0,sy,0,0,s*sz,0,c*sz,0,x,y,z,1])}
-function box(x,y,z,sx,sy,sz,color,yaw=0){let m=model(x,y,z,sx,sy,sz,yaw);gl.uniformMatrix4fv(uModel,false,m);gl.uniformMatrix4fv(um,false,matMul(VP,m));gl.uniform4fv(uTint,color);gl.drawArrays(gl.TRIANGLES,0,36)}
+function box(x,y,z,sx,sy,sz,color,yaw=0){bindGeometry(buf);let m=model(x,y,z,sx,sy,sz,yaw);gl.uniformMatrix4fv(uModel,false,m);gl.uniformMatrix4fv(um,false,matMul(VP,m));gl.uniform4fv(uTint,color);gl.drawArrays(gl.TRIANGLES,0,36)}
+function sphere(x,y,z,sx,sy,sz,color,yaw=0){bindGeometry(sphereBuf);let m=model(x,y,z,sx,sy,sz,yaw);gl.uniformMatrix4fv(uModel,false,m);gl.uniformMatrix4fv(um,false,matMul(VP,m));gl.uniform4fv(uTint,color);gl.drawArrays(gl.TRIANGLES,0,sphereCount)}
 const colors={grass:[.12,.31,.25,1],road:[.12,.14,.17,1],side:[.48,.48,.43,1],water:[.045,.34,.43,1],palm:[.34,.22,.12,1],leaf:[.08,.34,.22,1],lamp:[.19,.22,.24,1],glow:[1,.78,.42,1],white:[.82,.83,.78,1],glass:[.16,.31,.39,1],red:[.78,.10,.12,1],yellow:[.88,.65,.20,1],blue:[.13,.37,.53,1],skin:[.75,.52,.36,1],shirt:[.9,.73,.48,1]};
 const buildings=[];for(let x=-4;x<=4;x++)for(let z=-4;z<=4;z++){if(Math.abs(x)%2===0&&Math.abs(z)%2===0){let h=3.5+((x*x+z*z*3)%5)*1.15;buildings.push({x:x*17+8,z:z*17+8,h,w:8+((x+z+12)%3)*1.4,d:8+((x-z+12)%3)*1.3,col:[[.68,.38,.29,1],[.72,.61,.43,1],[.29,.48,.47,1],[.48,.34,.48,1],[.58,.59,.61,1]][Math.abs(x*7+z*3)%5]})}}
 const player={x:0,z:7,yaw:0,car:null};const cars=[{x:0,z:0,yaw:0,color:colors.red,speed:0},{x:-13,z:-8,yaw:1.2,color:colors.yellow,speed:0},{x:22,z:20,yaw:3,color:colors.blue,speed:0}];let target={x:0,z:36};
@@ -40,14 +45,14 @@ addEventListener('keydown',e=>{let m={ArrowUp:'f',w:'f',ArrowDown:'b',s:'b',Arro
 document.getElementById('sprint').onpointerdown=()=>running=true;document.getElementById('sprint').onpointerup=()=>running=false;
 document.getElementById('enter').onclick=()=>{if(player.car){player.x=player.car.x+2;player.z=player.car.z+2;player.car=null;document.getElementById('mode').textContent='ПЕШКОМ';document.getElementById('hint').textContent='Исследуй город или найди другую машину'}else{let c=cars.find(c=>Math.hypot(c.x-player.x,c.z-player.z)<4.5);if(c){player.car=c;document.getElementById('mode').textContent='ЗА РУЛЁМ';document.getElementById('hint').textContent='Нажми ▲ чтобы ехать, ◀ ▶ чтобы рулить';document.getElementById('mission').innerHTML='СВОБОДНЫЙ РЕЖИМ<br>Исследуй трёхмерный город'}}};
 function resize(){let d=Math.min(devicePixelRatio||1,1.7);canvas.width=Math.floor(innerWidth*d);canvas.height=Math.floor(innerHeight*d);gl.viewport(0,0,canvas.width,canvas.height);aspect=canvas.width/canvas.height}addEventListener('resize',resize);resize();
-function drawCar(c){box(c.x,.52,c.z,1.55,.48,.78,c.color,c.yaw);box(c.x,.98,c.z, .82,.43,.67,colors.glass,c.yaw);for(let side of [-1,1]){box(c.x+Math.cos(c.yaw)*.95,.2,c.z-Math.sin(c.yaw)*.95,.23,.23,.15,[.035,.04,.045,1],c.yaw);box(c.x-Math.cos(c.yaw)*.95,.2,c.z+Math.sin(c.yaw)*.95,.23,.23,.15,[.035,.04,.045,1],c.yaw)}}
+function drawCar(c){let co=Math.cos(c.yaw),si=Math.sin(c.yaw),pt=(x,z)=>[c.x+co*x+si*z,c.z-si*x+co*z];box(c.x,.48,c.z,1.62,.43,.82,c.color,c.yaw);box(c.x,.94,c.z-.08,.91,.43,.69,colors.glass,c.yaw);box(c.x,.19,c.z+1.42,1.48,.13,.12,[.12,.13,.15,1],c.yaw);box(c.x,.19,c.z-1.42,1.48,.13,.12,[.12,.13,.15,1],c.yaw);for(let side of [-1,1]){let f=pt(side*1.04,.6),r=pt(side*1.04,-.6);sphere(f[0],.24,f[1],.3,.3,.18,[.025,.03,.04,1],c.yaw);sphere(r[0],.24,r[1],.3,.3,.18,[.025,.03,.04,1],c.yaw);let h=pt(side*.98,1.34);sphere(h[0],.52,h[1],.19,.13,.12,[1,.88,.58,1],c.yaw);let tail=pt(side*.98,-1.38);sphere(tail[0],.48,tail[1],.15,.11,.09,[.85,.08,.06,1],c.yaw)}}
 function render(t){let dt=Math.min(.04,(t-last)/1000||.016);last=t;const v=player.car||player;let turn=(keys.r?1:0)-(keys.l?1:0),forward=(keys.f?1:0)-(keys.b?1:0);if(player.car){v.yaw+=turn*dt*2.1;v.speed+=(forward*13*dt);v.speed*=Math.pow(.985,dt*60);v.speed=Math.max(-4,Math.min(13,v.speed));const ox=v.x,oz=v.z;v.x+=Math.sin(v.yaw)*v.speed*dt;v.z+=Math.cos(v.yaw)*v.speed*dt;collide(v,1.65);if(v.x!==ox||v.z!==oz)v.speed*=.25}else{player.yaw+=turn*dt*2.4;let sp=running?8:4.2;player.x+=Math.sin(player.yaw)*forward*sp*dt;player.z+=Math.cos(player.yaw)*forward*sp*dt;collide(player,.48)}
 traffic.forEach(c=>{c.x+=c.speed*dt;if(c.x>65)c.x=-65});
 pedestrians.forEach(p=>{p.x+=p.speed*p.dir*dt;p.phase+=dt*7;if(p.x>72){p.x=72;p.dir=-1}else if(p.x< -72){p.x=-72;p.dir=1}});
 if(Math.hypot(v.x-target.x,v.z-target.z)<5){cash+=500;document.getElementById('cash').textContent='$ '+cash;target=target.z>0?{x:-36,z:-36}:{x:0,z:36};document.getElementById('mission').innerHTML='ЗАДАНИЕ ВЫПОЛНЕНО<br>+$500 · Следующая точка отмечена';}
 document.getElementById('mission').innerHTML='ТОЧКА НАЗНАЧЕНИЯ<br>'+Math.round(Math.hypot(v.x-target.x,v.z-target.z))+' м · награда $500';
 document.getElementById('mode').textContent=player.car?'ЗА РУЛЁМ':'ПЕШКОМ';const dir=[Math.sin(v.yaw),0,Math.cos(v.yaw)],eye=[v.x-dir[0]*10,5.8,v.z-dir[2]*10],center=[v.x+dir[0]*2,1.2,v.z+dir[2]*2];VP=matMul(perspective(1.02,aspect,.1,180),lookAt(eye,center,[0,1,0]));
-gl.enable(gl.DEPTH_TEST);gl.clearColor(.42,.68,.79,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+gl.enable(gl.DEPTH_TEST);gl.uniform3fv(uFog,[.56,.73,.79]);gl.clearColor(.56,.73,.79,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 box(0,-.38,0,260,.08,260,colors.water);box(0,-.12,0,90,.12,90,colors.grass);
 for(let i=-5;i<=5;i++){
 box(i*18,.015,0,2.8,.025,90,colors.road);box(0,.018,i*18,90,.025,2.8,colors.road);
@@ -79,10 +84,10 @@ box(target.x,.55,target.z,.55*pulse,.55*pulse,.55*pulse,colors.glow);
 box(target.x,1.55,target.z,.12,1.05,.12,colors.red);
 cars.forEach(drawCar);traffic.forEach(drawCar);
 // Low-poly pedestrians with animated arms and legs.
-pedestrians.forEach(p=>{let swing=Math.sin(p.phase)*.16;box(p.x,.92,p.z,.27,.48,.22,p.shirt);box(p.x,1.53,p.z,.21,.21,.21,colors.skin);box(p.x-.31,.91,p.z,.075,.34,.075,p.shirt,swing);box(p.x+.31,.91,p.z,.075,.34,.075,p.shirt,-swing);box(p.x-.12,.36+swing,p.z,.095,.36,.11,[.12,.16,.22,1],swing);box(p.x+.12,.36-swing,p.z,.095,.36,.11,[.12,.16,.22,1],-swing)});
-if(!player.car){box(player.x,.86,player.z,.34,.62,.28,colors.shirt,player.yaw);box(player.x,1.62,player.z,.25,.25,.25,colors.skin,player.yaw);box(player.x+.22,.48,player.z,.12,.48,.13,[.12,.16,.22,1],player.yaw);box(player.x-.22,.48,player.z,.12,.48,.13,[.12,.16,.22,1],player.yaw);box(player.x+.39,.92,player.z,.1,.42,.11,colors.skin,player.yaw);box(player.x-.39,.92,player.z,.1,.42,.11,colors.skin,player.yaw);box(player.x,.15,player.z,.38,.12,.32,[.07,.08,.1,1],player.yaw)}
+pedestrians.forEach(p=>{let swing=Math.sin(p.phase)*.16;box(p.x,.92,p.z,.27,.48,.22,p.shirt);sphere(p.x,1.55,p.z,.22,.25,.22,colors.skin);box(p.x-.31,.91,p.z,.075,.34,.075,p.shirt,swing);box(p.x+.31,.91,p.z,.075,.34,.075,p.shirt,-swing);box(p.x-.12,.36+swing,p.z,.095,.36,.11,[.12,.16,.22,1],swing);box(p.x+.12,.36-swing,p.z,.095,.36,.11,[.12,.16,.22,1],-swing)});
+if(!player.car){box(player.x,.86,player.z,.34,.62,.28,colors.shirt,player.yaw);sphere(player.x,1.62,player.z,.25,.28,.25,colors.skin,player.yaw);box(player.x+.22,.48,player.z,.12,.48,.13,[.12,.16,.22,1],player.yaw);box(player.x-.22,.48,player.z,.12,.48,.13,[.12,.16,.22,1],player.yaw);box(player.x+.39,.92,player.z,.1,.42,.11,colors.skin,player.yaw);box(player.x-.39,.92,player.z,.1,.42,.11,colors.skin,player.yaw);box(player.x,.15,player.z,.38,.12,.32,[.07,.08,.1,1],player.yaw)}
 // A subtle sun disk and distant coastal skyline.
-box(58,24,-72,5,5,.5,[1,.77,.43,1]);
+sphere(58,24,-72,5,5,1.2,[1,.78,.48,1]);for(let i=0;i<5;i++)sphere(42+i*13,15+(i%2)*3,-70-i*2,5.5,1.5,2.8,[.88,.94,.91,1]);
 
 requestAnimationFrame(render)}
 requestAnimationFrame(render);
