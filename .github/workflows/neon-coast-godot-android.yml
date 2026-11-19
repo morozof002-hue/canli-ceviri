@@ -1,0 +1,33 @@
+name: NEON COAST Android APK
+
+on:
+  push:
+    branches: [neon-coast-godot]
+    paths:
+      - 'GodotProject/**'
+      - '.github/workflows/neon-coast-godot-android.yml'
+  workflow_dispatch:
+
+jobs:
+  export-android:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Prepare export directory
+        run: mkdir -p GodotProject/build
+      - name: Import project resources
+        working-directory: GodotProject
+        run: godot --headless --editor --path . --import
+      - name: Export Android APK
+        working-directory: GodotProject
+        run: godot --headless --path . --export-debug "Android" build/NEON-COAST.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEON-COAST-Android
+          path: GodotProject/build/NEON-COAST.apk
+          if-no-files-found: error
+          retention-days: 14
