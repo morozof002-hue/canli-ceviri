@@ -190,7 +190,7 @@ function uniqueCompliment(){
  let used=[];
  try{used=JSON.parse(localStorage.getItem(key)||'[]')}catch(e){}
  const all=[];
- for(let i=0;i<mashaOpeners.length;i++)for(let j=0;j<mashaEndings.length;j++)all.push({id:i* mashaEndings.length+j,line='Машенька, '+mashaOpeners[i]+'. '+mashaEndings[j]});
+ for(let i=0;i<mashaOpeners.length;i++)for(let j=0;j<mashaEndings.length;j++)all.push({id:i* mashaEndings.length+j,line:'Машенька, '+mashaOpeners[i]+'. '+mashaEndings[j]});
  const available=all.filter(item=>!used.includes(item.id));
  if(!available.length){toast('Машенька, я уже сказала тебе все свои комплименты. Пора пополнить мой запас 💗');return null}
  const item=available[Math.floor(Math.random()*available.length)];
