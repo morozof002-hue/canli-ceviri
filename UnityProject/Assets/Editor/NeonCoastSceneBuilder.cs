@@ -21,7 +21,7 @@ public static class NeonCoastSceneBuilder
         matSea=Mat("Mediterranean water",new Color(.025f,.31f,.39f)); matGlass=Mat("Blue glass",new Color(.10f,.24f,.29f),.55f);
         matWhite=Mat("Warm white",new Color(.83f,.78f,.66f)); matWarm=Mat("Terracotta",new Color(.62f,.29f,.18f));
         matPalm=Mat("Palm green",new Color(.10f,.24f,.12f)); matAsphalt=Mat("Building cream",new Color(.69f,.61f,.48f));
-        Cube("Ground",new Vector3(0,-.6f,-20),new Vector3(220,1,160),matSand);
+        Cube("Ground",new Vector3(0,-.6f,-15),new Vector3(220,1,165),matSand);
         GameObject sea=Cube("Sea",new Vector3(0,-.3f,105),new Vector3(220,.5f,55),matSea);Object.DestroyImmediate(sea.GetComponent<Collider>());
         Cube("Beach",new Vector3(0,-.05f,73),new Vector3(220,.3f,13),matSand);
         Cube("Coastal promenade",new Vector3(0,.05f,61),new Vector3(220,.35f,5),matSide);
@@ -52,9 +52,9 @@ public static class NeonCoastSceneBuilder
         for(int x=-96;x<=96;x+=16){Cylinder("Palm trunk",new Vector3(x,3.2f,55),.28f,6.4f,matWarm); for(int a=0;a<6;a++){GameObject leaf=Cube("Palm frond",new Vector3(x+Mathf.Cos(a*Mathf.PI/3)*2.4f,6.2f,55+Mathf.Sin(a*Mathf.PI/3)*2.4f),new Vector3(.55f,.18f,5.2f),matPalm);leaf.transform.rotation=Quaternion.Euler(0,a*60,25);}}
         for(int x=-90;x<=90;x+=15){Cylinder("Lamp post",new Vector3(x,3,48),.09f,6,matAsphalt);Cube("Lamp head",new Vector3(x,6,48),new Vector3(.8f,.22f,.4f),matWarm);}
         // parked cars as readable low-poly vehicle silhouettes
-        for(int x=-78;x<=78;x+=26){Car(new Vector3(x,.8f,42),x%2==0?matWarm:matGlass);}
+        for(int x=-78;x<=78;x+=26){Car(new Vector3(x,.8f,24),x%2==0?matWarm:matGlass);}
         // Player capsule + controller
-        GameObject player=GameObject.CreatePrimitive(PrimitiveType.Capsule);player.name="Player";player.transform.position=new Vector3(0,1.15f,25);
+        GameObject player=GameObject.CreatePrimitive(PrimitiveType.Capsule);player.name="Player";player.transform.position=new Vector3(10,1.15f,24);
         Object.DestroyImmediate(player.GetComponent<Collider>());
         var cc=player.AddComponent<CharacterController>();cc.height=1.9f;cc.radius=.38f;cc.center=new Vector3(0,.95f,0);
         var controller=player.AddComponent<NeonPlayerController>();
