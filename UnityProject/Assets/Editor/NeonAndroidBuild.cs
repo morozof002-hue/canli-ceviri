@@ -50,6 +50,6 @@ public static class NeonAndroidBuild
         if(report.summary.result==BuildResult.Succeeded)
             Debug.Log("APK created: "+Path.GetFullPath(output)+" ("+report.summary.totalSize+" bytes)");
         else
-            Debug.LogError("Android build failed: "+report.summary.result+"; errors="+report.summary.totalErrors);
+            throw new System.Exception("Android build failed: "+report.summary.result+"; errors="+report.summary.totalErrors);
     }
 }
