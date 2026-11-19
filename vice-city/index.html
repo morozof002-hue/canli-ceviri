@@ -27,7 +27,7 @@ function lookAt(eye,center,up){let z=norm(sub(eye,center)),x=norm(cross(up,z)),y
 const sub=(a,b)=>a.map((v,i)=>v-b[i]),dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],norm=a=>{let l=Math.hypot(...a)||1;return a.map(v=>v/l)};
 function model(x,y,z,sx,sy,sz,yaw=0){let c=Math.cos(yaw),s=Math.sin(yaw);return new Float32Array([c*sx,0,-s*sx,0,0,sy,0,0,s*sz,0,c*sz,0,x,y,z,1])}
 function box(x,y,z,sx,sy,sz,color,yaw=0){let m=model(x,y,z,sx,sy,sz,yaw);gl.uniformMatrix4fv(uModel,false,m);gl.uniformMatrix4fv(um,false,matMul(VP,m));gl.uniform4fv(uTint,color);gl.drawArrays(gl.TRIANGLES,0,36)}
-const colors={grass:[.12,.31,.25,1],road:[.12,.14,.17,1],side:[.48,.48,.43,1],white:[.82,.83,.78,1],glass:[.16,.31,.39,1],red:[.78,.10,.12,1],yellow:[.88,.65,.20,1],blue:[.13,.37,.53,1],skin:[.75,.52,.36,1],shirt:[.9,.73,.48,1]};
+const colors={grass:[.12,.31,.25,1],road:[.12,.14,.17,1],side:[.48,.48,.43,1],water:[.045,.34,.43,1],palm:[.34,.22,.12,1],leaf:[.08,.34,.22,1],lamp:[.19,.22,.24,1],glow:[1,.78,.42,1],white:[.82,.83,.78,1],glass:[.16,.31,.39,1],red:[.78,.10,.12,1],yellow:[.88,.65,.20,1],blue:[.13,.37,.53,1],skin:[.75,.52,.36,1],shirt:[.9,.73,.48,1]};
 const buildings=[];for(let x=-4;x<=4;x++)for(let z=-4;z<=4;z++){if(Math.abs(x)%2===0&&Math.abs(z)%2===0){let h=3.5+((x*x+z*z*3)%5)*1.15;buildings.push({x:x*17+8,z:z*17+8,h,w:8+((x+z+12)%3)*1.4,d:8+((x-z+12)%3)*1.3,col:[[.68,.38,.29,1],[.72,.61,.43,1],[.29,.48,.47,1],[.48,.34,.48,1],[.58,.59,.61,1]][Math.abs(x*7+z*3)%5]})}}
 const player={x:0,z:7,yaw:0,car:null};const cars=[{x:5,z:7,yaw:0,color:colors.red,speed:0},{x:-13,z:-8,yaw:1.2,color:colors.yellow,speed:0},{x:22,z:20,yaw:3,color:colors.blue,speed:0}];const traffic=[];for(let i=0;i<10;i++)traffic.push({x:-55+i*12,z:i%2?2:-2,yaw:0,color:i%3?colors.white:colors.blue,speed:2.2+(i%3)*.3});
 let keys={},running=false,cash=250,entered=false,VP,aspect=1,last=0;
@@ -42,10 +42,35 @@ traffic.forEach(c=>{c.x+=c.speed*dt;if(c.x>65)c.x=-65});
 const dir=[Math.sin(v.yaw),0,Math.cos(v.yaw)],eye=[v.x-dir[0]*10,5.8,v.z-dir[2]*10],center=[v.x+dir[0]*2,1.2,v.z+dir[2]*2];VP=matMul(perspective(1.02,aspect,.1,180),lookAt(eye,center,[0,1,0]));
 gl.enable(gl.DEPTH_TEST);gl.clearColor(.42,.68,.79,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 box(0,-.12,0,90,.12,90,colors.grass);
-for(let i=-5;i<=5;i++){box(i*18,.015,0,2.8,.025,90,colors.road);box(0,.018,i*18,90,.025,2.8,colors.road);for(let j=-4;j<=4;j++){box(i*18,.045,j*18,2.85,.025,.11,colors.yellow);box(j*18,.045,i*18,.11,.025,2.85,colors.yellow)}}
+for(let i=-5;i<=5;i++){
+box(i*18,.015,0,2.8,.025,90,colors.road);box(0,.018,i*18,90,.025,2.8,colors.road);
+for(let side of [-1,1]){box(i*18+side*3.45,.06,0,.62,.07,90,colors.side);box(0,.06,i*18+side*3.45,90,.07,.62,colors.side)}
+for(let j=-4;j<=4;j++){box(i*18,.045,j*18,2.85,.025,.11,colors.yellow);box(j*18,.045,i*18,.11,.025,2.85,colors.yellow)}
+// lane dashes on the long avenues
+for(let k=-4;k<=4;k++){box(i*18,.055,k*9, .07,.025,2.2,colors.white);box(k*9,.055,i*18,2.2,.025,.07,colors.white)}
+}
 for(const b of buildings){box(b.x,b.h/2,b.z,b.w/2,b.h/2,b.d/2,b.col);box(b.x,b.h+.09,b.z,b.w/2+.08,.12,b.d/2+.08,[.18,.2,.22,1]);for(let y=1.5;y<b.h-1;y+=2.1){for(let s of [-1,1]){box(b.x+s*b.w*.23,y,b.z+b.d/2+.025,.42,.48,.035,[.14,.29,.38,1]);box(b.x+b.w/2+.025,y,b.z+s*b.d*.23,.035,.48,.42,[.14,.29,.38,1])}}}
+// Tropical boulevard details: palms, street lamps and lit shop signs.
+for(let x=-72;x<=72;x+=18)for(let z=-72;z<=72;z+=18){
+ if((Math.abs(x+z)%36)===0){
+  for(let side of [-1,1]){
+   let px=x+side*4.45,pz=z+4.6;
+   box(px,1.65,pz,.16,1.65,.16,colors.palm);
+   box(px,3.35,pz,.95,.13,.22,colors.leaf,0.45);
+   box(px,3.55,pz,.9,.12,.2,colors.leaf,1.25);
+   box(px,3.35,pz,.9,.12,.2,colors.leaf,2.15);
+   box(px,3.52,pz,.85,.12,.2,colors.leaf,3.1);
+   let lx=x-side*4.45,lz=z-4.6;
+   box(lx,2.15,lz,.09,2.15,.09,colors.lamp);
+   box(lx,4.25,lz,.48,.12,.3,colors.glow);
+  }
+ }
+}
 cars.forEach(drawCar);traffic.forEach(drawCar);
 if(!player.car){box(player.x,.8,player.z,.34,.8,.28,colors.shirt,player.yaw);box(player.x,1.72,player.z,.27,.27,.27,colors.skin,player.yaw);box(player.x,.17,player.z,.35,.15,.3,[.07,.08,.1,1],player.yaw)}
+// A subtle sun disk and distant coastal skyline.
+box(58,24,-72,5,5,.5,[1,.77,.43,1]);
+
 requestAnimationFrame(render)}
 requestAnimationFrame(render);
 })();</script></body></html>
