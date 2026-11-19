@@ -3,10 +3,10 @@ using UnityEngine.EventSystems;
 
 public class NeonTouchHUD : MonoBehaviour
 {
-    public NeonPlayerController player;
+    public NeonPlayerController player;\n    public NeonVehicleInteraction interaction;
     Rect stick = new Rect(28, 0, 164, 164);
     Rect sprintButton = new Rect(0, 0, 104, 62);
-    Rect jumpButton = new Rect(0, 0, 92, 62);
+    Rect jumpButton = new Rect(0, 0, 92, 62);\n    Rect enterButton = new Rect(0, 0, 112, 62);
     int stickFinger = -1;
     Vector2 stickCenter, stickValue;
     GUIStyle panel, button, small;
@@ -15,14 +15,14 @@ public class NeonTouchHUD : MonoBehaviour
         float s = Mathf.Clamp(Screen.height / 760f, .78f, 1.25f);
         stick.width = stick.height = 150*s; stick.x = 26*s; stick.y = Screen.height - stick.height - 28*s;
         sprintButton.width=106*s; sprintButton.height=60*s; sprintButton.x=Screen.width-250*s; sprintButton.y=Screen.height-102*s;
-        jumpButton.width=92*s; jumpButton.height=60*s; jumpButton.x=Screen.width-126*s; jumpButton.y=Screen.height-102*s;
+        jumpButton.width=92*s; jumpButton.height=60*s; jumpButton.x=Screen.width-126*s; jumpButton.y=Screen.height-102*s;\n        enterButton.width=112*s; enterButton.height=54*s; enterButton.x=Screen.width-132*s; enterButton.y=Screen.height-174*s;
         if(panel==null){ panel=new GUIStyle(GUI.skin.box){fontSize=Mathf.RoundToInt(18*s),alignment=TextAnchor.MiddleCenter}; button=new GUIStyle(GUI.skin.button){fontSize=Mathf.RoundToInt(17*s),fontStyle=FontStyle.Bold}; small=new GUIStyle(GUI.skin.label){fontSize=Mathf.RoundToInt(13*s),normal={textColor=Color.white}}; }
         GUI.Box(new Rect(18*s,18*s,190*s,54*s),"NEON COAST  /  FREE ROAM",panel);
         GUI.Label(new Rect(24*s,74*s,260*s,26*s),"Explore the coast  •  1980s",small);
         GUI.Box(stick,"");
         GUI.Label(new Rect(stick.x+26*s,stick.y+stick.height+4*s,160*s,22*s),"MOVE",small);
         if(GUI.RepeatButton(sprintButton,"SPRINT")) player.SetSprint(true);
-        if(GUI.Button(jumpButton,"JUMP")) player.RequestJump();
+        if(GUI.Button(jumpButton,"JUMP")) { if(interaction && interaction.InVehicle) interaction.ToggleVehicle(); else player.RequestJump(); }\n        if(interaction && GUI.Button(enterButton,interaction.InVehicle?"EXIT":"ENTER")) interaction.ToggleVehicle();
         HandleStick();
     }
     void HandleStick()
