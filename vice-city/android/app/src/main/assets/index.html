@@ -75,9 +75,25 @@ function drawCar(c){let co=Math.cos(c.yaw),si=Math.sin(c.yaw),pt=(x,z)=>[c.x+co*
 function render(t){let dt=Math.min(.04,(t-last)/1000||.016);last=t;const v=player.car||player;let turn=(keys.r?1:0)-(keys.l?1:0),forward=(keys.f?1:0)-(keys.b?1:0);if(player.car){v.yaw+=turn*dt*2.1;v.speed+=(forward*24*dt);v.speed*=Math.pow(.992,dt*60);v.speed=Math.max(-9,Math.min(28,v.speed));const ox=v.x,oz=v.z;v.x+=Math.sin(v.yaw)*v.speed*dt;v.z+=Math.cos(v.yaw)*v.speed*dt;collide(v,1.65);if(v.x!==ox||v.z!==oz)v.speed*=.25}else{player.yaw+=turn*dt*2.4;let sp=running?8:4.2;player.x+=Math.sin(player.yaw)*forward*sp*dt;player.z+=Math.cos(player.yaw)*forward*sp*dt;collide(player,.48)}
 traffic.forEach(c=>{c.x+=c.speed*dt;if(c.x>145)c.x=-145});
 pedestrians.forEach(p=>{p.phase+=dt*7;if(p.respawn>0){p.respawn-=dt;if(p.respawn<=0){p.hp=2;p.stun=0;p.x=-70+Math.random()*140;p.z=Math.random()<.5?4.65:-4.65;}return;}if(p.stun>0){p.stun=Math.max(0,p.stun-dt);if(p.hp<=0&&p.stun===0)p.respawn=7;return;}p.x+=p.speed*p.dir*dt;if(p.x>145){p.x=145;p.dir=-1}else if(p.x< -145){p.x=-145;p.dir=1}});
-if(Math.hypot(v.x-target.x,v.z-target.z)<5&&missionCooldown<=0){missionCooldown=1.25;tone(660,.16,.1);setTimeout(()=>tone(880,.22,.1),130);let reward=missions[missionIndex].reward;cash+=reward;document.getElementById('cash').textContent='$ '+cash;missionIndex++;if(missionIndex>=missions.length){missionIndex=0;document.getElementById('hint').textContent='ВСЯ ЦЕПОЧКА МИССИЙ ПРОЙДЕНА! Новый круг заданий открыт';}else{document.getElementById('hint').textContent='Миссия выполнена! +
-if(audio&&engineGain){const sp=player.car?Math.abs(player.car.speed):0;engineGain.gain.setTargetAtTime(player.car&&soundOn?.035+sp*.003:0,audio.currentTime,.12);engineOsc.frequency.setTargetAtTime(45+sp*5,audio.currentTime,.09);}if(!player.car&&forward!==0&&soundOn){stepClock+=dt*(running?3.1:1.9);if(stepClock>1){stepClock=0;tone(72,.055,.035,'triangle',-20);}}else stepClock=0;const dx=target.x-v.x,dz=target.z-v.z,dist=Math.round(Math.hypot(dx,dz));let rel=Math.atan2(dx,dz)-v.yaw;while(rel>Math.PI)rel-=Math.PI*2;while(rel< -Math.PI)rel+=Math.PI*2;let guidance=Math.abs(rel)<.38?'ЕДЬ ПРЯМО':Math.abs(rel)>2.75?'РАЗВОРАЧИВАЙСЯ':rel>0?'ПОВОРАЧИВАЙ ВПРАВО':'ПОВОРАЧИВАЙ ВЛЕВО';document.getElementById('waydir').textContent=guidance;document.getElementById('missionTitle').textContent=missions[missionIndex].name;document.getElementById('missionBrief').textContent=missions[missionIndex].brief;document.getElementById('waydist').textContent='До точки: '+dist+' м · награда 
-document.getElementById('mode').textContent=player.car?'ЗА РУЛЁМ':'ПЕШКОМ';const dir=[Math.sin(v.yaw),0,Math.cos(v.yaw)],eye=[v.x-dir[0]*8.5,4.8,v.z-dir[2]*8.5],center=[v.x+dir[0]*2.8,1.35,v.z+dir[2]*2.8];VP=matMul(perspective(1.02,aspect,.1,180),lookAt(eye,center,[0,1,0]));gl.uniform3fv(uEye,eye);gl.uniform3fv(uSun,[-.45,.86,.32]);
+if(Math.hypot(v.x-target.x,v.z-target.z)<5&&missionCooldown<=0){
+ missionCooldown=1.25;
+ tone(660,.16,.1);
+ setTimeout(()=>tone(880,.22,.1),130);
+ const reward=missions[missionIndex].reward;
+ cash+=reward;
+ document.getElementById('cash').textContent='$ '+cash;
+ missionIndex++;
+ if(missionIndex>=missions.length){
+  missionIndex=0;
+  document.getElementById('hint').textContent='ВСЯ ЦЕПОЧКА МИССИЙ ПРОЙДЕНА! Новый круг заданий открыт';
+ }else{
+  document.getElementById('hint').textContent='Миссия выполнена! +$'+reward+' · Новое задание: '+missions[missionIndex].name;
+ }
+ target=missions[missionIndex];
+ document.getElementById('missionTitle').textContent=missions[missionIndex].name;
+ document.getElementById('missionBrief').textContent=missions[missionIndex].brief;
+}
+if(audio&&engineGain){const sp=player.car?Math.abs(player.car.speed):0;engineGain.gain.setTargetAtTime(player.car&&soundOn?.035+sp*.003:0,audio.currentTime,.12);engineOsc.frequency.setTargetAtTime(45+sp*5,audio.currentTime,.09);}if(!player.car&&forward!==0&&soundOn){stepClock+=dt*(running?3.1:1.9);if(stepClock>1){stepClock=0;tone(72,.055,.035,'triangle',-20);}}else stepClock=0;const dx=target.x-v.x,dz=target.z-v.z,dist=Math.round(Math.hypot(dx,dz));let rel=Math.atan2(dx,dz)-v.yaw;while(rel>Math.PI)rel-=Math.PI*2;while(rel< -Math.PI)rel+=Math.PI*2;let guidance=Math.abs(rel)<.38?'ЕДЬ ПРЯМО':Math.abs(rel)>2.75?'РАЗВОРАЧИВАЙСЯ':rel>0?'ПОВОРАЧИВАЙ ВПРАВО':'ПОВОРАЧИВАЙ ВЛЕВО';document.getElementById('waydir').textContent=guidance;document.getElementById('missionTitle').textContent=missions[missionIndex].name;document.getElementById('missionBrief').textContent=missions[missionIndex].brief;document.getElementById('waydist').textContent='До точки: '+dist+' м · награда $'+missions[missionIndex].reward;document.getElementById('mode').textContent=player.car?'ЗА РУЛЁМ':'ПЕШКОМ';const dir=[Math.sin(v.yaw),0,Math.cos(v.yaw)],eye=[v.x-dir[0]*8.5,4.8,v.z-dir[2]*8.5],center=[v.x+dir[0]*2.8,1.35,v.z+dir[2]*2.8];VP=matMul(perspective(1.02,aspect,.1,180),lookAt(eye,center,[0,1,0]));gl.uniform3fv(uEye,eye);gl.uniform3fv(uSun,[-.45,.86,.32]);
 gl.enable(gl.DEPTH_TEST);gl.uniform3fv(uFog,[.56,.73,.79]);gl.clearColor(.56,.73,.79,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 box(0,-.38,0,260,.08,260,colors.water);box(0,-.12,0,160,.12,160,colors.grass);
 for(let i=-9;i<=9;i++){
