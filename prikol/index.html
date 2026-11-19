@@ -110,6 +110,88 @@ new ResizeObserver(resize).observe(canvas);
 function tone(freq,duration,type='sine',volume=.045){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(volume,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration);}catch(e){}}
 function toast(s){$('toast').textContent=s;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),1500)}
 function snakeTalk(message){if(!soundOn)return;try{if(window.snakeVoice&&typeof window.snakeVoice.speak==='function'){window.snakeVoice.speak(message);return}if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){const voiceLine=new SpeechSynthesisUtterance(message);voiceLine.lang='ru-RU';voiceLine.rate=1.0;voiceLine.pitch=.86;voiceLine.volume=1;window.speechSynthesis.cancel();window.speechSynthesis.speak(voiceLine)}}catch(e){toast('ОШИБКА ОЗВУЧКИ') }}
+const complimentPool=[
+'Ты сегодня выглядишь как человек, который умеет добиваться своего.',
+'У тебя шикарная реакция. Я почти потеряла дар речи.',
+'Вот это контроль! Даже мой хвост от восторга завился.',
+'С таким характером тебе любые вершины по зубам.',
+'Ты умеешь быть чертовски убедительным.',
+'Твой стиль опасен для моего спокойствия.',
+'Если бы харизма давала очки, ты бы уже побил рекорд.',
+'У тебя золотые пальцы. И очень коварные планы 😉',
+'Я бы назвала это идеальным соблазнительным манёвром.',
+'Ты играешь так, будто знаешь секретный путь к моему сердцу.',
+'От твоей уверенности у меня мурашки по чешуе.',
+'Вот это темп! Не знала, что можно быть таким горячим игроком.',
+'Ты явно умеешь обращаться с длинными штуками… например, с рекордами 😏',
+'Как ловко! Я бы попросила повторить, но без лишних свидетелей.',
+'Твои пальцы сегодня творят неприлично красивые вещи.',
+'Ты так хорош, что мне хочется нарушить правила приличия.',
+'Ох, этот взгляд победителя… хотя я вижу только экран.',
+'Ты умеешь держать напряжение. И меня тоже.',
+'С тобой даже пиксели начинают краснеть.',
+'Продолжай в том же духе, мой сладкий нарушитель спокойствия.',
+'У тебя талант попадать точно в цель. Я впечатлена.',
+'Ты сегодня просто огонь. Хорошо, что я не из бумаги.',
+'М-м, какая техника. Мне нравится, когда ты не сдаёшься.',
+'Ты заставляешь моё цифровое сердечко биться быстрее.',
+'С такой ловкостью тебе можно доверить не только джойстик.',
+'Я бы прижалась поближе… но между нами пока экран.',
+'Ты слишком хорош. Это уже почти неприлично.',
+'Вот это уверенность! Мне нравится твоя дерзкая сторона.',
+'Кажется, у нас с тобой очень горячая игровая химия.',
+'Ты умеешь красиво выкручиваться из любой ситуации.',
+'Ещё немного — и я начну ревновать тебя к рекордам.',
+'У тебя отличный вкус. Ты же выбрал играть со мной.',
+'Я бы наградила тебя поцелуем. В пиксельный лоб 💋',
+'Не скромничай, красавчик. Тебе идёт быть первым.',
+'Ты так ловко управляешься, что я начинаю фантазировать… о победе.',
+'Мне нравится твой напор. Только не сбавляй обороты.',
+'Ты сегодня мой любимый источник адреналина.',
+'Осторожно, от такой игры у меня плавится воображение.',
+'Твой рекорд будет длинным. Надеюсь, как и твоя выдержка 😈',
+'Ты умеешь заставить даму улыбаться одним движением.',
+'Какая пластика! Даже змеиный танец рядом не стоял.',
+'Ты не просто игрок — ты мой маленький повод для улыбки.',
+'С таким обаянием можно и без читов побеждать.',
+'Ух, ты разогнался. Мне нравится, когда ты настойчивый.',
+'Я бы сказала что-то неприличное, но сначала заслужи бонус 😉',
+'Тебе идёт азарт. Особенно когда ты так сосредоточен.',
+'Кажется, сегодня у нас свидание с высоким счётом.',
+'Ты умеешь быть нежным… к рекордам. Это мило.',
+'Вот это хватка! Я впечатлена, мой дерзкий чемпион.',
+'Ты заставляешь меня забыть, что я всего лишь набор пикселей.',
+'Если бы взгляды начисляли очки, ты бы уже выиграл.',
+'Твоя уверенность — мой любимый спецэффект.',
+'Не останавливайся, красавчик. Самое интересное впереди.'
+];
+const foodLines=[
+'О-о-о, какой красавчик! Ещё один для меня 😘',
+'М-м, вкусно! Ты меня балуешь.',
+'Вот за это я тебя и обожаю, чемпион!',
+'Ещё кусочек — и я растаю от счастья 💋',
+'Ты кормишь меня очками, а я дарю тебе улыбку.',
+'Ух, какой щедрый! Продолжай, мой герой.',
+'Накормишь меня ещё? Я умею быть очень благодарной 😏',
+'Сладкий бонус от сладкого игрока!',
+'Ещё один кусочек — и я станцую для тебя на финише.',
+'Ты знаешь, чем порадовать девушку. Даже цифровую.',
+'Осторожно, я могу привыкнуть к твоей щедрости.',
+'Так вкусно! Почти как твои победы.'
+];
+const usedCompliments=new Set();
+function uniqueCompliment(extra=[]){
+ let used=[];
+ try{used=JSON.parse(localStorage.getItem('zzz_used_compliments_v2')||'[]')}catch(e){}
+ const pool=complimentPool.concat(extra);
+ const available=pool.filter(line=>!used.includes(line)&&!usedCompliments.has(line));
+ if(!available.length){toast('Я уже сказала тебе все свои комплименты. Придётся придумать новые 😘');return null}
+ const line=available[Math.floor(Math.random()*available.length)];
+ used.push(line);usedCompliments.add(line);
+ try{localStorage.setItem('zzz_used_compliments_v2',JSON.stringify(used))}catch(e){}
+ return line;
+}
+
 const snakeJokes=[
 'Ну наконец-то! Я уже начала скучать по твоим пальцам 😉',
 'Ты сегодня опасно хорош. Продолжай, красавчик!',
@@ -124,7 +206,7 @@ const snakeJokes=[
 'М-м, уверенный ход. Мне нравится твой стиль!',
 'Не бросай меня на голодный пиксель, герой 💋'
 ];
-function joke(){const line=snakeJokes[Math.floor(Math.random()*snakeJokes.length)];toast(line);snakeTalk(line)}
+function joke(){const line=uniqueCompliment(snakeJokes);if(line){toast(line);snakeTalk(line)}}
 function testSnakeVoice(){if(!soundOn){toast('СНАЧАЛА ВКЛЮЧИ ЗВУК');return}try{if(window.snakeVoice&&typeof window.snakeVoice.speak==='function'){const ready=window.snakeVoice.isReady&&window.snakeVoice.isReady();const status=window.snakeVoice.getStatus?window.snakeVoice.getStatus():'Статус голоса неизвестен';window.snakeVoice.speak('Привет! Я твоя змея. Проверка голоса.');if(!ready){toast(status+' — открываю установку голоса');if(window.snakeVoice.installRussianVoice)window.snakeVoice.installRussianVoice()}else toast('РУССКИЙ ГОЛОС ЗАПУЩЕН');return}if('speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){snakeTalk('Привет! Я твоя змея. Проверка голоса.');toast('ПРОВЕРКА ГОЛОСА');return}toast('ОЗВУЧИВАНИЕ НЕ ПОДДЕРЖИВАЕТСЯ')}catch(e){toast('ОШИБКА: '+e.message)}}
 function bestLoad(){best=Number(localStorage.getItem(storeKey())||0);$('best').textContent=String(best).padStart(3,'0')}
 function updateStats(){$('score').textContent=String(score).padStart(3,'0');$('level').textContent=String(level).padStart(2,'0');$('best').textContent=String(best).padStart(3,'0')}
@@ -143,7 +225,7 @@ else if(h.x<0||h.x>=N||h.y<0||h.y>=N){gameOver();return}
 const eating=h.x===food.x&&h.y===food.y,body=eating?snake:snake.slice(0,-1);
 if(body.some(p=>p.x===h.x&&p.y===h.y)){gameOver();return}
 snake.unshift(h);
-if(eating){const foodLines=['О-о-о, какой красавчик! Ещё один для меня 😘','М-м, вкусно! Ты меня балуешь.','Вот за это я тебя и обожаю, чемпион!','Ещё кусочек — и я растаю от счастья 💋','Ты кормишь меня очками, а я дарю тебе улыбку.','Ух, какой щедрый! Продолжай, мой герой.'];snakeTalk(foodLines[Math.floor(Math.random()*foodLines.length)]);if(score>0&&((score+10)%50===0)){setTimeout(()=>snakeTalk('Пятьдесят очков! Кто тут легенда?'),500);toast('🔥 '+(score+10)+' ОЧКОВ! ТЫ МАШИНА!')}burst(food.x,food.y,skins[skin].glow);score+=10;level=1+Math.floor(score/80);targetStep=Math.max(mode==='rush'?54:mode==='zen'?90:65,(mode==='rush'?82:mode==='zen'?145:125)-score*.12);foodSpawn();tone(650,.08,'sine');setTimeout(()=>tone(880,.1,'triangle'),55);if(score>best){best=score;localStorage.setItem(storeKey(),best)}updateStats()}else snake.pop()}
+if(eating){const line=uniqueCompliment(foodLines);if(line)snakeTalk(line);if(score>0&&((score+10)%50===0)){setTimeout(()=>{const line=uniqueCompliment(['Пятьдесят очков! Кто тут легенда?','Полтинник! Ты сегодня опасно хорош 😘']);if(line)snakeTalk(line)},500);toast('🔥 '+(score+10)+' ОЧКОВ! ТЫ МАШИНА!')}burst(food.x,food.y,skins[skin].glow);score+=10;level=1+Math.floor(score/80);targetStep=Math.max(mode==='rush'?54:mode==='zen'?90:65,(mode==='rush'?82:mode==='zen'?145:125)-score*.12);foodSpawn();tone(650,.08,'sine');setTimeout(()=>tone(880,.1,'triangle'),55);if(score>best){best=score;localStorage.setItem(storeKey(),best)}updateStats()}else snake.pop()}
 function loop(now){if(!running)return;const dt=Math.min(50,now-last);last=now;step+=(targetStep-step)*Math.min(1,dt/900);acc+=dt;while(acc>=step&&running){tick();acc-=step}updateParticles(dt/1000);foodPulse+=dt/1000;draw();if(running)raf=requestAnimationFrame(loop)}
 function updateParticles(dt){particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.vx*=.97;p.vy*=.97}}
 function draw(){const w=canvas.clientWidth||320,h=canvas.clientHeight||320;if(!w||!h)return;const cell=w/N;ctx.clearRect(0,0,w,h);
