@@ -12,7 +12,8 @@
 2. Выбери **NEON COAST → Build First 3D District**.
 3. Открой `Assets/Scenes/NeonCoast_District01.unity`, нажми Play. В Project Settings → Player → Other Settings установи Active Input Handling = Both и перезапусти редактор.
 4. На ПК: WASD/стрелки, Shift — бег, Space — прыжок. На телефоне — джойстик, SPRINT, JUMP; свайп справа поворачивает камеру.
-5. Подойди к машине и нажми ENTER/EXIT, чтобы сесть за руль. В машине управление — тот же джойстик.\n6. Для APK выбери **NEON COAST → Configure Android Build**, затем **NEON COAST → Build Android APK**. Файл появится в `Build/Android/NEON-COAST.apk`.
+5. Подойди к машине и нажми ENTER/EXIT, чтобы сесть за руль. В машине управление — тот же джойстик.
+6. Для APK выбери **NEON COAST → Configure Android Build**, затем **NEON COAST → Build Android APK**. Файл появится в `Build/Android/NEON-COAST.apk`.
 
 ## Состав первой основы
 - Процедурный приморский 3D-квартал: сетка улиц, здания, окна/балконы, пальмы, фонари, пляж и море.
