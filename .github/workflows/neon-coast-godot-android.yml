@@ -16,14 +16,73 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Prepare export directory
-        run: mkdir -p GodotProject/build
+
+      - name: Install Java and Android SDK components
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y openjdk-17-jdk unzip curl
+          JAVA_HOME="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
+          SDK_ROOT="${ANDROID_HOME:-/usr/lib/android-sdk}"
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
+          command -v sdkmanager
+          yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses
+          sdkmanager --sdk_root="$SDK_ROOT" \
+            "platform-tools" \
+            "build-tools;35.0.0" \
+            "platforms;android-35" \
+            "ndk;23.2.8568313" \
+            "cmake;3.10.2.4988404"
+
+      - name: Install Godot 4.4.1 Android export templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          mkdir -p "$TEMPLATE_DIR"
+          curl -L --fail --retry 3 \
+            "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" \
+            -o /tmp/godot-templates.tpz
+          unzip -l /tmp/godot-templates.tpz
+          unzip -oj /tmp/godot-templates.tpz \
+            "templates/android_debug.apk" \
+            "templates/android_release.apk" \
+            -d "$TEMPLATE_DIR"
+          test -s "$TEMPLATE_DIR/android_debug.apk"
+          test -s "$TEMPLATE_DIR/android_release.apk"
+
+      - name: Configure debug signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          keytool -genkeypair -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA -keysize 2048 -validity 10000
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$HOME/.android/debug.keystore" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey" >> "$GITHUB_ENV"
+          echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android" >> "$GITHUB_ENV"
+
       - name: Import project resources
         working-directory: GodotProject
         run: godot --headless --editor --path . --import
+
       - name: Export Android APK
         working-directory: GodotProject
-        run: godot --headless --path . --export-debug "Android" build/NEON-COAST.apk
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          godot --headless --path . --export-debug "Android" build/NEON-COAST.apk
+          test -s build/NEON-COAST.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
