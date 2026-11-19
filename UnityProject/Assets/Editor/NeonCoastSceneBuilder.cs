@@ -66,6 +66,7 @@ public static class NeonCoastSceneBuilder
         // sunset key light
         var sun=GameObject.Find("Directional Light");sun.transform.rotation=Quaternion.Euler(35,-28,0);sun.GetComponent<Light>().intensity=1.25f;
         EditorSceneManager.SaveScene(scene,"Assets/Scenes/NeonCoast_District01.unity");
+        EditorBuildSettings.scenes=new[]{new EditorBuildSettingsScene("Assets/Scenes/NeonCoast_District01.unity",true)};
         AssetDatabase.SaveAssets();AssetDatabase.Refresh();
         Debug.Log("NEON COAST district generated. Press Play to test. Mobile HUD and keyboard controls are included.");
     }
