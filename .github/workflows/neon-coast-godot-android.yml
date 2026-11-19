@@ -98,7 +98,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          godot --headless --path . --export-debug "Android" build/NEON-COAST.apk
+          godot --headless --verbose --path . --export-debug "Android" build/NEON-COAST.apk 2>&1 | tee build/export-diagnostics.log
           test -s build/NEON-COAST.apk
           file build/NEON-COAST.apk
           unzip -t build/NEON-COAST.apk
