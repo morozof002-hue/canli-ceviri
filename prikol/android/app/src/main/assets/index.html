@@ -27,7 +27,7 @@ header{display:flex;align-items:center;justify-content:space-between;margin:0 2p
 .stat-value.accent{color:var(--cyan);text-shadow:0 0 16px var(--glow)}
 .arena-wrap{position:relative;border-radius:20px;padding:8px;background:linear-gradient(135deg,#43f5e822,#9d6bff22,#ff4fbd22);border:1px solid #ffffff14}
 .arena{position:relative;border-radius:14px;overflow:hidden;background:#080e1d;aspect-ratio:1/1}
-canvas{width:100%;height:100%;display:block;touch-action:none}
+canvas{width:100%;height:100%;display:block;touch-action:none;image-rendering:pixelated;filter:drop-shadow(0 8px 8px #0008)}
 .overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:22px;background:linear-gradient(180deg,#080b18aa,#080b18d9);backdrop-filter:blur(7px);text-align:center}
 .overlay.hidden{display:none}
 .modal{width:100%;max-width:310px}
@@ -57,7 +57,7 @@ select option{background:#11172a}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media(max-width:380px){.panel{padding:11px}.dpad{grid-template-columns:repeat(3,52px);grid-template-rows:52px 52px;gap:6px}.dpad button{font-size:22px;min-height:50px;min-width:50px}.action-stack button{min-width:104px;min-height:47px;padding:12px 9px}.stat-value{font-size:17px}}
 
-/* LUXE 3D + playful flirt personality */
+/* ISOMETRIC 3D PIXEL ART + playful flirt personality */\n.arena{perspective:900px;background:radial-gradient(ellipse at 50% 45%,#1b2b50,#080d1c 76%)}\n.arena-wrap{transform:translateZ(0)}\ncanvas{image-rendering:pixelated}
 body{background:radial-gradient(ellipse at 50% -12%,#49305f 0%,#17142e 38%,#070a17 78%)}
 .panel{background:linear-gradient(145deg,#29203ff2,#11182cf5 55%,#21142df2);border:1px solid #bd8cff55;box-shadow:0 28px 90px #000b,0 0 35px #d65cff20,inset 0 2px 1px #ffffff24,inset 0 -12px 24px #0005}
 .logo{background:linear-gradient(145deg,#fff0fa 0%,#ff70cf 28%,#9d6bff 68%,#39245f 100%);box-shadow:0 8px 18px #ff4fbd55, inset 0 2px 4px #fff9, inset 0 -5px 8px #32104e;color:#fff;text-shadow:0 2px 8px #5b145a}
@@ -225,7 +225,8 @@ function start(){if(running)return;if(dead)reset();running=true;paused=false;hid
 function pause(){if(!running)return;running=false;paused=true;cancelAnimationFrame(raf);$('pauseBtn').textContent='▶ ПРОДОЛЖИТЬ';showOverlay('SESSION PAUSED','ПАУЗА','Твой прогресс сохранён. Когда будешь готов — продолжай.','ПРОДОЛЖИТЬ','НАЧАТЬ ЗАНОВО')}
 function gameOver(){running=false;dead=true;cancelAnimationFrame(raf);snakeTalk('Ах, какой азарт! Не расстраивайся, мой герой. Я верю в тебя. Давай ещё раз!');tone(190,.42,'sawtooth',.07);showOverlay('ONE MORE CHANCE','НУ ЖЕ,<br>МОЙ ГЕРОЙ!','Результат: '+score+' очков. Ты всё равно великолепен. Я уже жду следующего раунда 😉','ПОКОРИТЬ МЕНЯ СНОВА','ВЕРНУТЬСЯ В МЕНЮ')}
 function turn(d){if(!dirs[d])return;const a=dirs[dir],b=dirs[d];if(a.x+b.x===0&&a.y+b.y===0)return;nextDir=d;if(!running&&!paused&&!dead)start()}
-function burst(x,y,color){for(let i=0;i<16;i++){const a=Math.random()*Math.PI*2,v=25+Math.random()*100;particles.push({x:(x+.5)*canvas.clientWidth/N,y:(y+.5)*canvas.clientHeight/N,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.55,max:.55,color,size:1.5+Math.random()*3})}}
+function burst(x,y,color){const p={x:wpos(x,y).x,y:wpos(x,y).y};for(let i=0;i<16;i++){const a=Math.random()*Math.PI*2,v=25+Math.random()*100;particles.push({x:p.x,y:p.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.55,max:.55,color,size:2+Math.random()*3})}}
+function wpos(x,y){const tw=Math.min(canvas.clientWidth/N,canvas.clientHeight/(N*.53)),th=tw*.53;return{x:canvas.clientWidth/2+(x-y)*tw*.5,y:(canvas.clientHeight-N*th)*.48+th*.5+(x+y)*th*.5}}
 function tick(){dir=nextDir;const v=dirs[dir],h={x:snake[0].x+v.x,y:snake[0].y+v.y};
 if(mode==='zen'){h.x=(h.x+N)%N;h.y=(h.y+N)%N}
 else if(h.x<0||h.x>=N||h.y<0||h.y>=N){gameOver();return}
@@ -235,15 +236,30 @@ snake.unshift(h);
 if(eating){const line=uniqueCompliment(foodLines);if(line)snakeTalk(line);if(score>0&&((score+10)%50===0)){setTimeout(()=>{const line=uniqueCompliment(['Пятьдесят очков! Кто тут легенда?','Полтинник! Ты сегодня опасно хорош 😘']);if(line)snakeTalk(line)},500);toast('🔥 '+(score+10)+' ОЧКОВ! ТЫ МАШИНА!')}burst(food.x,food.y,skins[skin].glow);score+=10;level=1+Math.floor(score/80);targetStep=Math.max(mode==='rush'?54:mode==='zen'?90:65,(mode==='rush'?82:mode==='zen'?145:125)-score*.12);foodSpawn();tone(650,.08,'sine');setTimeout(()=>tone(880,.1,'triangle'),55);if(score>best){best=score;localStorage.setItem(storeKey(),best)}updateStats()}else snake.pop()}
 function loop(now){if(!running)return;const dt=Math.min(50,now-last);last=now;step+=(targetStep-step)*Math.min(1,dt/900);acc+=dt;while(acc>=step&&running){tick();acc-=step}updateParticles(dt/1000);foodPulse+=dt/1000;draw();if(running)raf=requestAnimationFrame(loop)}
 function updateParticles(dt){particles=particles.filter(p=>p.life>0);for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;p.vx*=.97;p.vy*=.97}}
-function draw(){const w=canvas.clientWidth||320,h=canvas.clientHeight||320;if(!w||!h)return;const cell=w/N;ctx.clearRect(0,0,w,h);
-const bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#0b1530');bg.addColorStop(1,'#080d1c');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
-ctx.strokeStyle='rgba(130,160,220,.075)';ctx.lineWidth=.7;for(let i=0;i<=N;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,h);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(w,i*cell);ctx.stroke()}
-const s=skins[skin],pulse=1+Math.sin(foodPulse*5)*.12,fx=(food.x+.5)*cell,fy=(food.y+.5)*cell;
-ctx.save();ctx.shadowColor=s.glow;ctx.shadowBlur=24;const rg=ctx.createRadialGradient(fx,fy,1,fx,fy,cell*.48*pulse);rg.addColorStop(0,'#ffffff');rg.addColorStop(.25,s.head);rg.addColorStop(1,s.glow);ctx.fillStyle=rg;ctx.beginPath();ctx.arc(fx,fy,cell*.34*pulse,0,Math.PI*2);ctx.fill();ctx.restore();
-snake.forEach((p,i)=>{const pad=i===0?1.2:1.8,x=p.x*cell+pad,y=p.y*cell+pad,size=cell-pad*2,alpha=1-i/Math.max(20,snake.length)*.42;ctx.save();ctx.globalAlpha=alpha;ctx.shadowColor=s.glow;ctx.shadowBlur=i===0?19:10;const grad=ctx.createLinearGradient(x,y,x+size,y+size);grad.addColorStop(0,i===0?s.head:s.body);grad.addColorStop(1,s.body);ctx.fillStyle=grad;roundRect(x,y,size,size,cell*.28);ctx.fill();
-ctx.shadowBlur=0;ctx.globalAlpha=alpha*.48;const shine=ctx.createLinearGradient(x,y,x+size*.7,y+size);shine.addColorStop(0,'#ffffff');shine.addColorStop(.35,'#ffffff55');shine.addColorStop(1,'#ffffff00');ctx.fillStyle=shine;roundRect(x+1,y+1,size-2,size-2,cell*.25);ctx.fill();
-ctx.globalAlpha=alpha*.32;ctx.fillStyle='#ffffff';roundRect(x+size*.16,y+size*.12,size*.62,Math.max(1,size*.12),cell*.08);ctx.fill();ctx.restore();if(i===0){const eyeR=cell*.075,ex=dir==='left'?[x+size*.28,x+size*.28]:dir==='right'?[x+size*.72,x+size*.72]:[x+size*.3,x+size*.7],ey=dir==='up'?[y+size*.28,y+size*.28]:dir==='down'?[y+size*.72,y+size*.72]:[y+size*.3,y+size*.3];ctx.fillStyle='#07101e';for(let k=0;k<2;k++){ctx.beginPath();ctx.arc(ex[k],ey[k],eyeR,0,Math.PI*2);ctx.fill()}}});
-for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=12;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;ctx.shadowBlur=0;
+function draw(){
+const w=canvas.clientWidth||320,h=canvas.clientHeight||320;if(!w||!h)return;
+ctx.clearRect(0,0,w,h);
+const tileW=Math.min(w/N,h/(N*.53)),tileH=tileW*.53,ox=w/2,oy=(h-N*tileH)*.48+tileH*.5;
+const iso=(x,y,z=0)=>({x:ox+(x-y)*tileW*.5,y:oy+(x+y)*tileH*.5-z});
+const diamond=(x,y,fill,stroke)=>{ctx.beginPath();ctx.moveTo(x,y-tileH*.5);ctx.lineTo(x+tileW*.5,y);ctx.lineTo(x,y+tileH*.5);ctx.lineTo(x-tileW*.5,y);ctx.closePath();ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=.7;ctx.stroke()}};
+const cube=(gx,gy,color,head=false,glow=color)=>{
+const p=iso(gx,gy,head?tileH*.35:tileH*.22),tw=tileW*.38,th=tileH*.39,depth=tileH*.62;
+ctx.save();ctx.shadowColor=glow;ctx.shadowBlur=head?19:10;
+ctx.beginPath();ctx.moveTo(p.x-tw,p.y);ctx.lineTo(p.x,p.y-th);ctx.lineTo(p.x+tw,p.y);ctx.lineTo(p.x,p.y+th);ctx.closePath();
+const top=ctx.createLinearGradient(p.x,p.y-th,p.x,p.y+th);top.addColorStop(0,head?'#ffffff': '#ffffff88');top.addColorStop(.42,color);top.addColorStop(1,color);ctx.fillStyle=top;ctx.fill();
+ctx.beginPath();ctx.moveTo(p.x-tw,p.y);ctx.lineTo(p.x,p.y+th);ctx.lineTo(p.x,p.y+th+depth);ctx.lineTo(p.x-tw,p.y+depth);ctx.closePath();ctx.fillStyle=shade(color,.56);ctx.fill();
+ctx.beginPath();ctx.moveTo(p.x+tw,p.y);ctx.lineTo(p.x,p.y+th);ctx.lineTo(p.x,p.y+th+depth);ctx.lineTo(p.x+tw,p.y+depth);ctx.closePath();ctx.fillStyle=shade(color,.72);ctx.fill();
+ctx.restore();
+};
+function shade(hex,f){const n=parseInt(hex.slice(1),16),r=Math.max(0,Math.min(255,((n>>16)&255)*f)),g=Math.max(0,Math.min(255,((n>>8)&255)*f)),b=Math.max(0,Math.min(255,(n&255)*f));return 'rgb('+r+','+g+','+b+')'}
+const bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#182044');bg.addColorStop(.55,'#0b1228');bg.addColorStop(1,'#070b19');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+// Deep pixel-art floor in isometric perspective
+for(let y=0;y<N;y++)for(let x=0;x<N;x++){const p=iso(x,y);diamond(p.x,p.y,(x+y)%2?'rgba(77,104,166,.12)':'rgba(34,54,105,.19)','rgba(119,151,220,.13)')}
+const s=skins[skin],pulse=1+Math.sin(foodPulse*5)*.12,fp=iso(food.x,food.y,tileH*.3);
+ctx.save();ctx.shadowColor=s.glow;ctx.shadowBlur=24;const rg=ctx.createRadialGradient(fp.x,fp.y,1,fp.x,fp.y,tileW*.48*pulse);rg.addColorStop(0,'#ffffff');rg.addColorStop(.28,s.head);rg.addColorStop(1,s.glow);ctx.fillStyle=rg;ctx.beginPath();ctx.arc(fp.x,fp.y,tileW*.22*pulse,0,Math.PI*2);ctx.fill();ctx.restore();
+cube(food.x,food.y,s.body,true,s.glow);
+for(let i=snake.length-1;i>=0;i--){const p=snake[i],head=i===0;cube(p.x,p.y,head?s.head:s.body,head,s.glow);if(head){const q=iso(p.x,p.y,tileH*.7),eye=tileW*.045;ctx.fillStyle='#07101e';ctx.beginPath();ctx.arc(q.x-tileW*.11,q.y-tileH*.01,eye,0,Math.PI*2);ctx.arc(q.x+tileW*.11,q.y-tileH*.01,eye,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(q.x-tileW*.12-eye*.3,q.y-tileH*.05,eye*.55,eye*.55);ctx.fillRect(q.x+tileW*.10,q.y-tileH*.05,eye*.55,eye*.55)}}
+for(const p of particles){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=12;ctx.fillRect(p.x-2,p.y-2,4,4)}ctx.globalAlpha=1;ctx.shadowBlur=0;
 }
 function roundRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
 function setMode(){mode=$('mode').value;$('modeTag').textContent='РЕЖИМ: '+mode.toUpperCase();bestLoad();reset()}
