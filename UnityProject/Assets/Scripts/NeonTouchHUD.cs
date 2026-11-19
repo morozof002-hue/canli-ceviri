@@ -10,7 +10,7 @@ public class NeonTouchHUD : MonoBehaviour
     int stickFinger = -1;
     Vector2 stickCenter, stickValue;
     GUIStyle panel, button, small;
-    void OnGUI()
+    void ApplyMove(Vector2 value) { if(interaction) interaction.DriveInput(value); else if(player) player.SetMobileMove(value); }\n    void OnGUI()
     {
         float s = Mathf.Clamp(Screen.height / 760f, .78f, 1.25f);
         stick.width = stick.height = 150*s; stick.x = 26*s; stick.y = Screen.height - stick.height - 28*s;
@@ -35,8 +35,8 @@ public class NeonTouchHUD : MonoBehaviour
             if(t.phase==TouchPhase.Began && stick.Contains(p)) { stickFinger=t.fingerId; stickCenter=stick.center; }
             if(t.fingerId==stickFinger)
             {
-                if(t.phase==TouchPhase.Ended || t.phase==TouchPhase.Canceled){stickFinger=-1;stickValue=Vector2.zero;player.SetMobileMove(Vector2.zero);}
-                else {Vector2 d=(p-stickCenter)/(stick.width*.38f);stickValue=Vector2.ClampMagnitude(d,1);player.SetMobileMove(stickValue);}
+                if(t.phase==TouchPhase.Ended || t.phase==TouchPhase.Canceled){stickFinger=-1;stickValue=Vector2.zero;ApplyMove(Vector2.zero);}
+                else {Vector2 d=(p-stickCenter)/(stick.width*.38f);stickValue=Vector2.ClampMagnitude(d,1);ApplyMove(stickValue);}
             }
         }
         if(e.type==EventType.MouseDown && stick.Contains(e.mousePosition)){stickCenter=stick.center;stickFinger=-2;}
