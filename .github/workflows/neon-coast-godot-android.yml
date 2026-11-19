@@ -30,7 +30,9 @@ jobs:
           echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
           echo "$JAVA_HOME/bin" >> "$GITHUB_PATH"
           command -v sdkmanager
-          yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses
+          # sdkmanager exits after reading all answers; yes may then receive SIGPIPE (141).
+# Accept the licenses without letting that harmless pipe closure fail the job.
+yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses || true
           sdkmanager --sdk_root="$SDK_ROOT" \
             "platform-tools" \
             "build-tools;35.0.0" \
