@@ -56,8 +56,9 @@ public static class NeonCoastSceneBuilder
         Object.DestroyImmediate(player.GetComponent<Collider>());
         var cc=player.AddComponent<CharacterController>();cc.height=1.9f;cc.radius=.38f;cc.center=new Vector3(0,.95f,0);
         var controller=player.AddComponent<NeonPlayerController>();
+        var interaction=player.AddComponent<NeonVehicleInteraction>();
         var camera=Camera.main;camera.name="Third Person Camera";var orbit=camera.gameObject.AddComponent<NeonOrbitCamera>();orbit.target=player.transform;controller.cameraTransform=camera.transform;
-        var hud=new GameObject("Mobile HUD").AddComponent<NeonTouchHUD>();hud.player=controller;
+        var hud=new GameObject("Mobile HUD").AddComponent<NeonTouchHUD>();hud.player=controller;hud.interaction=interaction;
         camera.transform.position=new Vector3(0,4,18);camera.transform.LookAt(player.transform.position+Vector3.up*1.3f);
         // sunset key light
         var sun=GameObject.Find("Directional Light");sun.transform.rotation=Quaternion.Euler(35,-28,0);sun.GetComponent<Light>().intensity=1.25f;
@@ -68,5 +69,22 @@ public static class NeonCoastSceneBuilder
     static Material Mat(string n,Color c,float metallic=0){Shader s=Shader.Find("Universal Render Pipeline/Lit");if(!s)s=Shader.Find("Standard");var m=new Material(s){name=n,color=c};m.SetFloat("_Metallic",metallic);return m;}
     static void Cube(string n,Vector3 p,Vector3 scale,Material m){var g=GameObject.CreatePrimitive(PrimitiveType.Cube);g.name=n;g.transform.position=p;g.transform.localScale=scale;g.GetComponent<Renderer>().sharedMaterial=m;}
     static void Cylinder(string n,Vector3 p,float r,float h,Material m){var g=GameObject.CreatePrimitive(PrimitiveType.Cylinder);g.name=n;g.transform.position=p;g.transform.localScale=new Vector3(r*2,h/2,r*2);g.GetComponent<Renderer>().sharedMaterial=m;}
-    static void Car(Vector3 p,Material paint){Cube("Parked coupe",p,new Vector3(4.2f,1.1f,2),paint);Cube("Car cabin",p+new Vector3(-.2f,.8f,0),new Vector3(2.3f,.8f,1.7f),matGlass);foreach(float x in new float[]{-1.35f,1.35f})foreach(float z in new float[]{-.95f,.95f}){var w=GameObject.CreatePrimitive(PrimitiveType.Cylinder);w.name="Wheel";w.transform.position=p+new Vector3(x,-.35f,z);w.transform.rotation=Quaternion.Euler(90,0,0);w.transform.localScale=new Vector3(.65f,.18f,.65f);w.GetComponent<Renderer>().sharedMaterial=matRoad;}}
+    static void Car(Vector3 p,Material paint)
+    {
+        GameObject root=new GameObject("1980s coastal coupe");
+        root.transform.position=p;
+        GameObject body=GameObject.CreatePrimitive(PrimitiveType.Cube);
+        body.name="Car body";body.transform.SetParent(root.transform,false);body.transform.localScale=new Vector3(4.2f,1.1f,2f);body.transform.localPosition=Vector3.zero;body.GetComponent<Renderer>().sharedMaterial=paint;
+        GameObject cabin=GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cabin.name="Cabin";cabin.transform.SetParent(root.transform,false);cabin.transform.localPosition=new Vector3(-.2f,.8f,0);cabin.transform.localScale=new Vector3(2.3f,.8f,1.7f);cabin.GetComponent<Renderer>().sharedMaterial=matGlass;
+        foreach(float x in new float[]{-1.35f,1.35f}) foreach(float z in new float[]{-.95f,.95f})
+        {
+            GameObject wheel=GameObject.CreatePrimitive(PrimitiveType.Cylinder);wheel.name="Wheel";wheel.transform.SetParent(root.transform,false);
+            wheel.transform.localPosition=new Vector3(x,-.35f,z);wheel.transform.localRotation=Quaternion.Euler(90,0,0);wheel.transform.localScale=new Vector3(.65f,.18f,.65f);wheel.GetComponent<Renderer>().sharedMaterial=matRoad;
+        }
+        Rigidbody rb=root.AddComponent<Rigidbody>();rb.mass=1250;rb.interpolation=RigidbodyInterpolation.Interpolate;
+        root.AddComponent<NeonVehicleController>();
+        GameObject cam=new GameObject("Vehicle camera target");cam.transform.SetParent(root.transform,false);cam.transform.localPosition=new Vector3(0,2.4f,-5.5f);
+        root.GetComponent<NeonVehicleController>().cameraTarget=cam.transform;
+    }
 }
