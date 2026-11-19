@@ -1,28 +1,94 @@
 package ru.prikol.snake;
 
 import android.app.Activity;
+import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.webkit.JavascriptInterface;
-import java.util.Locale;
-import android.os.Bundle;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.view.Window;
 import android.view.WindowManager;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private WebView webView;
     private TextToSpeech tts;
     private volatile boolean ttsReady = false;
+    private volatile boolean destroyed = false;
+    private volatile String ttsStatus = "Запуск русского голоса…";
+    private String pendingLine = null;
 
     private class SnakeVoice {
         @JavascriptInterface
-        public void speak(String message) {
-            if (tts != null && ttsReady && message != null) {
-                runOnUiThread(() -> tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "snake-line"));
+        public boolean speak(String message) {
+            if (message == null || message.trim().isEmpty()) return false;
+            synchronized (MainActivity.this) {
+                if (destroyed) return false;
+                if (!ttsReady || tts == null) {
+                    pendingLine = message;
+                    return false;
+                }
+                final String line = message;
+                runOnUiThread(() -> speakNow(line));
+                return true;
             }
         }
+
+        @JavascriptInterface
+        public boolean isReady() {
+            return ttsReady;
+        }
+
+        @JavascriptInterface
+        public String getStatus() {
+            return ttsStatus;
+        }
+    }
+
+    private void speakNow(String message) {
+        if (destroyed || tts == null || !ttsReady) return;
+        int result = tts.speak(message, TextToSpeech.QUEUE_FLUSH, null, "zzz-snake-" + System.currentTimeMillis());
+        if (result == TextToSpeech.ERROR) {
+            ttsStatus = "Ошибка запуска синтезатора речи";
+            ttsReady = false;
+        }
+    }
+
+    private void initSpeech() {
+        ttsStatus = "Инициализация синтезатора…";
+        tts = new TextToSpeech(getApplicationContext(), status -> {
+            if (destroyed || tts == null) return;
+            if (status != TextToSpeech.SUCCESS) {
+                ttsReady = false;
+                ttsStatus = "Android не смог запустить синтезатор речи";
+                return;
+            }
+            int language = tts.setLanguage(new Locale("ru", "RU"));
+            if (language == TextToSpeech.LANG_MISSING_DATA) {
+                ttsReady = false;
+                ttsStatus = "Не установлены голосовые данные русского языка";
+                return;
+            }
+            if (language == TextToSpeech.LANG_NOT_SUPPORTED) {
+                ttsReady = false;
+                ttsStatus = "Синтезатор не поддерживает русский язык";
+                return;
+            }
+            tts.setSpeechRate(1.0f);
+            tts.setPitch(0.86f);
+            ttsReady = true;
+            ttsStatus = "Русский голос готов";
+            String queued;
+            synchronized (MainActivity.this) {
+                queued = pendingLine;
+                pendingLine = null;
+            }
+            if (queued != null) {
+                final String line = queued;
+                runOnUiThread(() -> speakNow(line));
+            }
+        });
     }
 
     @Override
@@ -32,17 +98,10 @@ public class MainActivity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        tts = new TextToSpeech(this, status -> {
-            if (status == TextToSpeech.SUCCESS) {
-                int language = tts.setLanguage(new Locale("ru", "RU"));
-                ttsReady = language != TextToSpeech.LANG_MISSING_DATA && language != TextToSpeech.LANG_NOT_SUPPORTED;
-                tts.setSpeechRate(1.04f);
-                tts.setPitch(0.82f);
-            }
-        });
+        initSpeech();
 
         webView = new WebView(this);
-        webView.setBackgroundColor(0xFFC7D3A0);
+        webView.setBackgroundColor(0xFF080B18);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setAllowFileAccess(true);
@@ -61,8 +120,18 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        if (webView != null) webView.destroy();
-        if (tts != null) { tts.stop(); tts.shutdown(); tts = null; }
+        destroyed = true;
+        ttsReady = false;
+        if (webView != null) {
+            webView.removeJavascriptInterface("snakeVoice");
+            webView.destroy();
+            webView = null;
+        }
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
+            tts = null;
+        }
         super.onDestroy();
     }
 }
