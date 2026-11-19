@@ -1,3 +1,4 @@
+# Rebuild trigger: verify the latest ZZZ Android source and publish a fresh APK.
 name: Build ZZZ Android APK
 
 on:
