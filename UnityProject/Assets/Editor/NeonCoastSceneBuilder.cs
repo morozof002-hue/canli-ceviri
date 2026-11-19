@@ -57,7 +57,7 @@ public static class NeonCoastSceneBuilder
         var cc=player.AddComponent<CharacterController>();cc.height=1.9f;cc.radius=.38f;cc.center=new Vector3(0,.95f,0);
         var controller=player.AddComponent<NeonPlayerController>();
         var interaction=player.AddComponent<NeonVehicleInteraction>();
-        var camera=Camera.main;camera.name="Third Person Camera";var orbit=camera.gameObject.AddComponent<NeonOrbitCamera>();orbit.target=player.transform;controller.cameraTransform=camera.transform;
+        var camera=Camera.main;camera.name="Third Person Camera";var orbit=camera.gameObject.AddComponent<NeonOrbitCamera>();orbit.target=player.transform;controller.cameraTransform=camera.transform;interaction.orbitCamera=orbit;
         var hud=new GameObject("Mobile HUD").AddComponent<NeonTouchHUD>();hud.player=controller;hud.interaction=interaction;
         var systems=new GameObject("Game Systems");systems.AddComponent<NeonPerformanceProfile>();var save=systems.AddComponent<NeonSaveSystem>();save.player=player.transform;
         camera.transform.position=new Vector3(0,4,18);camera.transform.LookAt(player.transform.position+Vector3.up*1.3f);
