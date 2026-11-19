@@ -37,8 +37,8 @@ public static class NeonAndroidBuild
             EditorUtility.DisplayDialog("NEON COAST","Сначала создай сцену через Build First 3D District.","OK");
             return;
         }
-        string output="Build/Android/NEON-COAST.apk";
-        Directory.CreateDirectory("Build/Android");
+        string output=Path.GetFullPath(Path.Combine(Application.dataPath,"../Build/Android/NEON-COAST.apk"));
+        Directory.CreateDirectory(Path.GetDirectoryName(output));
         BuildPlayerOptions options=new BuildPlayerOptions
         {
             scenes=System.Array.ConvertAll(EditorBuildSettings.scenes,s=>s.path),
