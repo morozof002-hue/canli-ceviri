@@ -16,6 +16,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private TextToSpeech tts;
     private volatile boolean ttsReady = false;
+    private volatile boolean ttsInitialized = false;
     private volatile boolean destroyed = false;
     private volatile String ttsStatus = "Запуск русского голоса…";
     private String pendingLine = null;
@@ -69,42 +70,48 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void configureRussianVoice() {
+        if (tts == null || destroyed) return;
+        int language = tts.setLanguage(new Locale("ru", "RU"));
+        if (language == TextToSpeech.LANG_MISSING_DATA) {
+            ttsReady = false;
+            ttsStatus = "Не установлены голосовые данные русского языка. Нажми ПРОВЕРИТЬ ГОЛОС для установки.";
+            return;
+        }
+        if (language == TextToSpeech.LANG_NOT_SUPPORTED) {
+            ttsReady = false;
+            ttsStatus = "Выбранный синтезатор не поддерживает русский язык. Установи другой движок TTS.";
+            return;
+        }
+        tts.setSpeechRate(1.0f);
+        tts.setPitch(0.86f);
+        ttsReady = true;
+        ttsStatus = "Русский голос готов";
+        String queued;
+        synchronized (MainActivity.this) {
+            queued = pendingLine;
+            pendingLine = null;
+        }
+        if (queued != null) {
+            final String line = queued;
+            runOnUiThread(() -> speakNow(line));
+        }
+    }
+
     private void initSpeech() {
         ttsStatus = "Инициализация синтезатора…";
         tts = new TextToSpeech(getApplicationContext(), status -> {
             if (destroyed || tts == null) return;
             if (status != TextToSpeech.SUCCESS) {
+                ttsInitialized = false;
                 ttsReady = false;
                 ttsStatus = "Android не смог запустить синтезатор речи";
                 return;
             }
-            int language = tts.setLanguage(new Locale("ru", "RU"));
-            if (language == TextToSpeech.LANG_MISSING_DATA) {
-                ttsReady = false;
-                ttsStatus = "Не установлены голосовые данные русского языка. Нажми ПРОВЕРИТЬ ГОЛОС для установки.";
-                return;
-            }
-            if (language == TextToSpeech.LANG_NOT_SUPPORTED) {
-                ttsReady = false;
-                ttsStatus = "Выбранный синтезатор не поддерживает русский язык. Установи другой движок TTS.";
-                return;
-            }
-            tts.setSpeechRate(1.0f);
-            tts.setPitch(0.86f);
-            ttsReady = true;
-            ttsStatus = "Русский голос готов";
-            String queued;
-            synchronized (MainActivity.this) {
-                queued = pendingLine;
-                pendingLine = null;
-            }
-            if (queued != null) {
-                final String line = queued;
-                runOnUiThread(() -> speakNow(line));
-            }
+            ttsInitialized = true;
+            configureRussianVoice();
         });
     }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -130,6 +137,14 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (ttsInitialized && !ttsReady && !destroyed) {
+            configureRussianVoice();
+        }
     }
 
     @Override
