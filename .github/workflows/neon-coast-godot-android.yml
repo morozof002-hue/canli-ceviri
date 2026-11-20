@@ -100,8 +100,9 @@ jobs:
           mkdir -p build
           godot --headless --verbose --path . --export-debug "Android" build/NEON-COAST.apk 2>&1 | tee build/export-diagnostics.log
           test -s build/NEON-COAST.apk
-          file build/NEON-COAST.apk
           unzip -t build/NEON-COAST.apk
+          "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose build/NEON-COAST.apk
+          sha256sum build/NEON-COAST.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -110,3 +111,12 @@ jobs:
           path: GodotProject/build/NEON-COAST.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload export diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NEON-COAST-build-diagnostics
+          path: GodotProject/build/export-diagnostics.log
+          if-no-files-found: ignore
+          retention-days: 7
