@@ -23,14 +23,20 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	mission_time += delta
-	if attack_cooldown > 0.0:\n\t\tattack_cooldown -= delta\n\tif is_instance_valid(mission_marker):
+	if attack_cooldown > 0.0:
+\t\tattack_cooldown -= delta
+\tif is_instance_valid(mission_marker):
 		mission_marker.rotate_y(delta * 1.5)
 		mission_marker.position.y = 1.5 + sin(mission_time * 2.0) * 0.22
 	if not mission_done and player.global_position.distance_to(mission_marker.global_position) < 3.0:
 		mission_done = true
 		$HUD/Panel/Objective.text = "МИССИЯ ВЫПОЛНЕНА  •  +$500"
 		$HUD/Panel/Objective.add_theme_color_override("font_color", Color(0.4, 1.0, 0.7))
-	if Input.is_action_just_pressed("attack") or (player != null and player.touch_attack_pressed):\n\t\tif player != null:\n\t\t\tplayer.touch_attack_pressed = false\n\t\t_attack_nearby_npc()\n\tif Input.is_action_just_pressed("interact") or touch_interact_pressed:
+	if Input.is_action_just_pressed("attack") or (player != null and player.touch_attack_pressed):
+\t\tif player != null:
+\t\t\tplayer.touch_attack_pressed = false
+\t\t_attack_nearby_npc()
+\tif Input.is_action_just_pressed("interact") or touch_interact_pressed:
 		touch_interact_pressed = false
 		_toggle_vehicle()
 	if in_car:
