@@ -15,7 +15,7 @@ func _layout() -> Dictionary:
 		"stick": Vector2(132.0, s.y - 132.0),
 		"run": Vector2(s.x - 250.0, s.y - 125.0),
 		"jump": Vector2(s.x - 112.0, s.y - 205.0),
-		"use": Vector2(s.x - 112.0, s.y - 76.0)
+		"use": Vector2(s.x - 112.0, s.y - 76.0),\n\t\t"attack": Vector2(s.x - 250.0, s.y - 260.0)
 	}
 
 func _draw() -> void:
@@ -26,7 +26,7 @@ func _draw() -> void:
 	draw_circle(base + stick_vector * 43.0, 29, Color(0.25, 0.85, 1.0, 0.78))
 	_draw_button(p.run, 53.0, "БЕГ", "run")
 	_draw_button(p.jump, 56.0, "ПРЫЖОК", "jump")
-	_draw_button(p.use, 48.0, "МАШИНА", "use")
+	_draw_button(p.use, 48.0, "МАШИНА", "use")\n\t_draw_button(p.attack, 55.0, "УДАР", "attack")
 
 func _draw_button(center: Vector2, radius: float, caption: String, key: String) -> void:
 	var held := active_buttons.values().has(key)
@@ -66,7 +66,7 @@ func _input(event: InputEvent) -> void:
 		_update_stick(event.position, p.stick)
 
 func _button_at(pos: Vector2, p: Dictionary) -> String:
-	if pos.distance_to(p.jump) < 68.0:
+	if pos.distance_to(p.attack) < 65.0:\n\t\treturn "attack"\n\tif pos.distance_to(p.jump) < 68.0:
 		return "jump"
 	if pos.distance_to(p.run) < 65.0:
 		return "run"
