@@ -136,3 +136,5 @@ jobs:
           path: GodotProject/build/export-diagnostics.log
           if-no-files-found: ignore
           retention-days: 7
+
+# Rebuild after the third-person camera framing update.
