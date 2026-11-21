@@ -166,10 +166,15 @@ func _build_player() -> void:
 	col.position.y = 0.91
 	player.add_child(col)
 
+	# Third-person follow camera: lower, closer and aimed at the hero's upper torso.
+	# The previous fixed downward angle made the character look oddly foreshortened.
 	var camera := Camera3D.new()
 	camera.name = "Camera3D"
-	camera.position = Vector3(0, 3.25, 6.2)
-	camera.rotation_degrees = Vector3(-16, 0, 0)
+	camera.position = Vector3(0.42, 2.35, 5.35)
+	camera.fov = 72.0
+	camera.near = 0.08
+	camera.far = 450.0
+	camera.look_at(Vector3(0.0, 1.25, 0.0), Vector3.UP)
 	camera.current = true
 	player.add_child(camera)
 	# Add only after all children exist so the hero script can find its AnimationPlayer in _ready().
