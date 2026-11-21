@@ -84,7 +84,7 @@ func _play_motion(motion: String) -> void:
 	if animation_player == null or not animation_names.has(motion):
 		return
 	var target: StringName = animation_names[motion]
-	if current_motion == motion and animation_player.is_playing():
+	if current_motion == motion:
 		return
 	current_motion = motion
 	animation_player.play(target, 0.16)
