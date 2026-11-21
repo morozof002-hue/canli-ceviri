@@ -210,10 +210,10 @@ func _build_car() -> void:
 
 func _build_npcs() -> void:
 	var positions := [
-		Vector3(-12, 0.95, 11), Vector3(-5, 0.95, -8),
-		Vector3(11, 0.95, 5), Vector3(20, 0.95, 15),
-		Vector3(34, 0.95, -8), Vector3(-28, 0.95, 2),
-		Vector3(43, 0.95, 22), Vector3(4, 0.95, -18)
+		Vector3(-12, 0, 11), Vector3(-5, 0, -8),
+		Vector3(11, 0, 5), Vector3(20, 0, 15),
+		Vector3(34, 0, -8), Vector3(-28, 0, 2),
+		Vector3(43, 0, 22), Vector3(4, 0, -18)
 	]
 	for i in range(positions.size()):
 		var npc := CharacterBody3D.new()
