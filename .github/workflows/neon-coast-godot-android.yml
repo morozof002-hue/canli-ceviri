@@ -1,5 +1,9 @@
 name: NEON COAST Android APK
 
+concurrency:
+  group: neon-coast-android
+  cancel-in-progress: true
+
 on:
   push:
     branches: [neon-coast-godot]
