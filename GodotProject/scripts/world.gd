@@ -5,6 +5,8 @@ const CAR_SCRIPT = preload("res://scripts/car.gd")
 var player: CharacterBody3D
 var car: CharacterBody3D
 var hud: CanvasLayer
+var status_label: Label
+var objective_label: Label
 var mission_marker: MeshInstance3D
 var in_car := false
 var mission_done := false
@@ -30,8 +32,8 @@ func _process(delta: float) -> void:
 		mission_marker.position.y = 1.5 + sin(mission_time * 2.0) * 0.22
 	if not mission_done and player.global_position.distance_to(mission_marker.global_position) < 3.0:
 		mission_done = true
-		$HUD/Panel/Objective.text = "МИССИЯ ВЫПОЛНЕНА  •  +$500"
-		$HUD/Panel/Objective.add_theme_color_override("font_color", Color(0.4, 1.0, 0.7))
+		objective_label.text = "МИССИЯ ВЫПОЛНЕНА  •  +$500"
+		objective_label.add_theme_color_override("font_color", Color(0.4, 1.0, 0.7))
 	if Input.is_action_just_pressed("attack") or (player != null and player.touch_attack_pressed):
 		if player != null:
 			player.touch_attack_pressed = false
@@ -40,9 +42,9 @@ func _process(delta: float) -> void:
 		touch_interact_pressed = false
 		_toggle_vehicle()
 	if in_car:
-		$HUD/Panel/Status.text = "ЗА РУЛЁМ  •  E — ВЫЙТИ"
+		status_label.text = "ЗА РУЛЁМ  •  E — ВЫЙТИ"
 	else:
-		$HUD/Panel/Status.text = "ПЕШКОМ  •  E — СЕСТЬ В МАШИНУ"
+		status_label.text = "ПЕШКОМ  •  E — СЕСТЬ В МАШИНУ"
 
 func _build_world() -> void:
 	var env := WorldEnvironment.new()
@@ -181,7 +183,7 @@ func _build_player() -> void:
 	camera.fov = 72.0
 	camera.near = 0.08
 	camera.far = 450.0
-	camera.look_at(Vector3(0.0, 1.05, 0.0), Vector3.UP)
+	camera.rotation.x = -0.295
 	camera.current = true
 	player.add_child(camera)
 	# Add only after all children exist so the hero script can find its AnimationPlayer in _ready().
@@ -245,9 +247,9 @@ func _attack_nearby_npc() -> void:
 			nearest_distance = distance
 	if nearest != null:
 		nearest.call("take_hit", player.global_position)
-		$HUD/Panel/Status.text = "УДАР!  •  У прохожего 3 удара здоровья"
+		status_label.text = "УДАР!  •  У прохожего 3 удара здоровья"
 	else:
-		$HUD/Panel/Status.text = "НИКОГО РЯДОМ — ПОДОЙДИ БЛИЖЕ"
+		status_label.text = "НИКОГО РЯДОМ — ПОДОЙДИ БЛИЖЕ"
 
 func _build_marker() -> void:
 	mission_marker = MeshInstance3D.new()
@@ -280,15 +282,15 @@ func _build_hud() -> void:
 	title.text = "NEON COAST  /  VICE DISTRICT"
 	title.add_theme_font_size_override("font_size",22)
 	vb.add_child(title)
-	var objective := Label.new()
-	objective.name = "Objective"
-	objective.text = "ЗАДАНИЕ: ДОБЕРИСЬ ДО НЕОНОВОЙ МАРКИ"
-	objective.add_theme_font_size_override("font_size",15)
-	vb.add_child(objective)
-	var status := Label.new()
-	status.name = "Status"
-	status.text = "ПЕШКОМ  •  E — СЕСТЬ В МАШИНУ"
-	vb.add_child(status)
+	objective_label = Label.new()
+	objective_label.name = "Objective"
+	objective_label.text = "ЗАДАНИЕ: ДОБЕРИСЬ ДО НЕОНОВОЙ МАРКИ"
+	objective_label.add_theme_font_size_override("font_size",15)
+	vb.add_child(objective_label)
+	status_label = Label.new()
+	status_label.name = "Status"
+	status_label.text = "ПЕШКОМ  •  E — СЕСТЬ В МАШИНУ"
+	vb.add_child(status_label)
 	var joystick := Control.new()
 	joystick.name = "TouchPad"
 	joystick.set_script(preload("res://scripts/touch_pad.gd"))
@@ -297,7 +299,7 @@ func _build_hud() -> void:
 
 func _toggle_vehicle() -> void:
 	if player.global_position.distance_to(car.global_position) > 5.0 and not in_car:
-		$HUD/Panel/Status.text = "ПОДОЙДИ БЛИЖЕ К МАШИНЕ"
+		status_label.text = "ПОДОЙДИ БЛИЖЕ К МАШИНЕ"
 		return
 	in_car = not in_car
 	if in_car:
