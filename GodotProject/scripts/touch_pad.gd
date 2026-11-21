@@ -91,6 +91,8 @@ func _apply_button(button: String, pressed: bool) -> void:
 		actor.touch_jump_pressed = true
 	elif button == "use" and pressed:
 		world.call("_toggle_vehicle")
+	elif button == "attack":
+		actor.touch_attack_pressed = pressed
 
 func _update_stick(pos: Vector2, base: Vector2) -> void:
 	stick_vector = ((pos - base) / 65.0).limit_length(1.0)
