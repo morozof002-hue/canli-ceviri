@@ -17,6 +17,7 @@ var attack_cooldown := 0.0
 func _ready() -> void:
 	_build_world()
 	_build_player()
+	_build_npcs()
 	_build_car()
 	_build_hud()
 	_build_marker()
@@ -165,6 +166,8 @@ func _build_player() -> void:
 	# CC0 Quaternius humanoid: textured body, real skeleton and baked animation clips.
 	var visual := preload("res://assets/character/neon_coast_hero.glb").instantiate()
 	visual.name = "CharacterVisual"
+	# Rotate the source model to face Godot forward (-Z), away from the rear camera.
+	visual.rotation.y = PI
 	player.add_child(visual)
 
 	var col := CollisionShape3D.new()
