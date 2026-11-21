@@ -152,7 +152,6 @@ func _build_player() -> void:
 	player.name = "Player"
 	player.set_script(PLAYER_SCRIPT)
 	player.position = Vector3(0, 1, 24)
-	add_child(player)
 
 	# CC0 Quaternius humanoid: textured body, real skeleton and baked animation clips.
 	var visual := preload("res://assets/character/neon_coast_hero.glb").instantiate()
@@ -173,6 +172,8 @@ func _build_player() -> void:
 	camera.rotation_degrees = Vector3(-16, 0, 0)
 	camera.current = true
 	player.add_child(camera)
+	# Add only after all children exist so the hero script can find its AnimationPlayer in _ready().
+	add_child(player)
 
 func _build_car() -> void:
 	car = CharacterBody3D.new()
