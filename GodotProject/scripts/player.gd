@@ -10,6 +10,7 @@ extends CharacterBody3D
 var touch_move := Vector2.ZERO
 var touch_sprint := false
 var touch_jump_pressed := false
+var touch_attack_pressed := false
 var animation_player: AnimationPlayer
 var animation_names: Dictionary = {}
 var current_motion := ""
