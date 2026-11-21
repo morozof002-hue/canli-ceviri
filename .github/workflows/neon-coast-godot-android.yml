@@ -96,6 +96,18 @@ jobs:
           set -euo pipefail
           godot --headless --editor --path . --import
 
+      - name: Validate game scripts and startup scene
+        shell: bash
+        working-directory: GodotProject
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          godot --headless --verbose --path . --quit-after 3 2>&1 | tee build/startup-validation.log
+          if grep -E "SCRIPT ERROR:|Parse Error:|Failed to load script" build/startup-validation.log; then
+            echo "Godot script/startup validation failed."
+            exit 1
+          fi
+
       - name: Export Android APK
         shell: bash
         working-directory: GodotProject
@@ -109,6 +121,10 @@ jobs:
           else
             export_status=$?
             echo "Godot returned exit code $export_status; checking whether it nevertheless produced a complete signed APK."
+          fi
+          if grep -E "SCRIPT ERROR:|Parse Error:|Failed to load script" build/export-diagnostics.log; then
+            echo "Godot reported script errors; refusing to publish this APK."
+            exit 1
           fi
           if [ ! -s "$APK" ]; then
             echo "APK was not created; export failed."
