@@ -10,6 +10,7 @@ var in_car := false
 var mission_done := false
 var mission_time := 0.0
 var touch_interact_pressed := false
+var attack_cooldown := 0.0
 
 func _ready() -> void:
 	_build_world()
@@ -22,14 +23,14 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	mission_time += delta
-	if is_instance_valid(mission_marker):
+	if attack_cooldown > 0.0:\n\t\tattack_cooldown -= delta\n\tif is_instance_valid(mission_marker):
 		mission_marker.rotate_y(delta * 1.5)
 		mission_marker.position.y = 1.5 + sin(mission_time * 2.0) * 0.22
 	if not mission_done and player.global_position.distance_to(mission_marker.global_position) < 3.0:
 		mission_done = true
 		$HUD/Panel/Objective.text = "МИССИЯ ВЫПОЛНЕНА  •  +$500"
 		$HUD/Panel/Objective.add_theme_color_override("font_color", Color(0.4, 1.0, 0.7))
-	if Input.is_action_just_pressed("interact") or touch_interact_pressed:
+	if Input.is_action_just_pressed("attack") or (player != null and player.touch_attack_pressed):\n\t\tif player != null:\n\t\t\tplayer.touch_attack_pressed = false\n\t\t_attack_nearby_npc()\n\tif Input.is_action_just_pressed("interact") or touch_interact_pressed:
 		touch_interact_pressed = false
 		_toggle_vehicle()
 	if in_car:
@@ -170,11 +171,11 @@ func _build_player() -> void:
 	# The previous fixed downward angle made the character look oddly foreshortened.
 	var camera := Camera3D.new()
 	camera.name = "Camera3D"
-	camera.position = Vector3(0.42, 2.35, 5.35)
+	camera.position = Vector3(0.0, 3.15, 6.9)
 	camera.fov = 72.0
 	camera.near = 0.08
 	camera.far = 450.0
-	camera.look_at(Vector3(0.0, 1.25, 0.0), Vector3.UP)
+	camera.look_at(Vector3(0.0, 1.05, 0.0), Vector3.UP)
 	camera.current = true
 	player.add_child(camera)
 	# Add only after all children exist so the hero script can find its AnimationPlayer in _ready().
@@ -206,6 +207,41 @@ func _build_car() -> void:
 	col.shape = shape
 	col.position.y = 0.7
 	car.add_child(col)
+
+func _build_npcs() -> void:
+	var positions := [
+		Vector3(-12, 0.95, 11), Vector3(-5, 0.95, -8),
+		Vector3(11, 0.95, 5), Vector3(20, 0.95, 15),
+		Vector3(34, 0.95, -8), Vector3(-28, 0.95, 2),
+		Vector3(43, 0.95, 22), Vector3(4, 0.95, -18)
+	]
+	for i in range(positions.size()):
+		var npc := CharacterBody3D.new()
+		npc.name = "StreetNPC_%02d" % i
+		npc.set_script(preload("res://scripts/npc.gd"))
+		npc.position = positions[i]
+		add_child(npc)
+
+func _attack_nearby_npc() -> void:
+	if attack_cooldown > 0.0 or in_car:
+		return
+	attack_cooldown = 0.62
+	var facing := -player.global_transform.basis.z
+	var nearest: Node3D = null
+	var nearest_distance := 2.25
+	for candidate in get_tree().get_nodes_in_group("fightable_npc"):
+		if not is_instance_valid(candidate):
+			continue
+		var offset: Vector3 = candidate.global_position - player.global_position
+		var distance := offset.length()
+		if distance < nearest_distance and (distance < 0.9 or facing.dot(offset.normalized()) > 0.15):
+			nearest = candidate
+			nearest_distance = distance
+	if nearest != null:
+		nearest.call("take_hit", player.global_position)
+		$HUD/Panel/Status.text = "УДАР!  •  У прохожего 3 удара здоровья"
+	else:
+		$HUD/Panel/Status.text = "НИКОГО РЯДОМ — ПОДОЙДИ БЛИЖЕ"
 
 func _build_marker() -> void:
 	mission_marker = MeshInstance3D.new()
