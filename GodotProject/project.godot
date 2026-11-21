@@ -2,7 +2,7 @@
 config_version=5
 
 [application]
-config/name="NEON COAST"
+config/name="NEON COAST 2"
 run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 
