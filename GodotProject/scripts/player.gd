@@ -10,26 +10,20 @@ extends CharacterBody3D
 var touch_move := Vector2.ZERO
 var touch_sprint := false
 var touch_jump_pressed := false
-var camera_yaw := 0.0
-var animation_clock := 0.0
-var left_leg: Node3D
-var right_leg: Node3D
-var left_arm: Node3D
-var right_arm: Node3D
-var torso: Node3D
+var animation_player: AnimationPlayer
+var animation_names: Dictionary = {}
+var current_motion := ""
 
 func _ready() -> void:
-	left_leg = get_node_or_null("CharacterVisual/LeftLegPivot")
-	right_leg = get_node_or_null("CharacterVisual/RightLegPivot")
-	left_arm = get_node_or_null("CharacterVisual/LeftArmPivot")
-	right_arm = get_node_or_null("CharacterVisual/RightArmPivot")
-	torso = get_node_or_null("CharacterVisual/Torso")
+	animation_player = _find_animation_player(self)
+	_cache_hero_animations()
+	_play_motion("idle")
 
 func _physics_process(delta: float) -> void:
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	if touch_move.length() > 0.08:
 		input = touch_move
-	var direction := Vector3(input.x, 0.0, input.y).rotated(Vector3.UP, camera_yaw)
+	var direction := Vector3(input.x, 0.0, input.y).rotated(Vector3.UP, 0.0)
 	if direction.length() > 0.08:
 		rotation.y = lerp_angle(rotation.y, atan2(-direction.x, -direction.z), delta * turn_speed)
 
@@ -49,24 +43,49 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= gravity * delta
 	touch_jump_pressed = false
 	move_and_slide()
-	_animate_character(delta, moving, running)
 
-func _animate_character(delta: float, moving: bool, running: bool) -> void:
-	var horizontal_speed := Vector2(velocity.x, velocity.z).length()
-	var intensity := clampf(horizontal_speed / run_speed, 0.0, 1.0)
-	var airborne := not is_on_floor()
-	if moving and not airborne:
-		animation_clock += delta * (10.0 if running else 6.5) * maxf(intensity, 0.35)
-	var swing := sin(animation_clock) * 0.62 * intensity
-	if airborne:
-		swing = -0.28
-	if left_leg:
-		left_leg.rotation.x = lerpf(left_leg.rotation.x, swing, delta * 12.0)
-	if right_leg:
-		right_leg.rotation.x = lerpf(right_leg.rotation.x, -swing, delta * 12.0)
-	if left_arm:
-		left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 0.72 - 0.08, delta * 12.0)
-	if right_arm:
-		right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 0.72 - 0.08, delta * 12.0)
-	if torso:
-		torso.rotation.z = lerpf(torso.rotation.z, -signf(velocity.x) * 0.025 * intensity, delta * 6.0)
+	if not is_on_floor():
+		_play_motion("run_jump" if moving else "jump")
+	elif moving:
+		_play_motion("run" if running else "walk")
+	else:
+		_play_motion("idle")
+
+func _find_animation_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node as AnimationPlayer
+	for child in node.get_children():
+		var found := _find_animation_player(child)
+		if found != null:
+			return found
+	return null
+
+func _cache_hero_animations() -> void:
+	if animation_player == null:
+		push_warning("Hero GLB has no AnimationPlayer; check imported model.")
+		return
+	for animation_name in animation_player.get_animation_list():
+		var key := String(animation_name).to_lower()
+		if key.contains("man_idle"):
+			animation_names["idle"] = animation_name
+		elif key.contains("man_walk"):
+			animation_names["walk"] = animation_name
+		elif key.contains("man_run") and not key.contains("runningjump"):
+			animation_names["run"] = animation_name
+		elif key.contains("man_runningjump"):
+			animation_names["run_jump"] = animation_name
+		elif key.contains("man_jump"):
+			animation_names["jump"] = animation_name
+	for loop_key in ["idle", "walk", "run"]:
+		if animation_names.has(loop_key):
+			animation_player.get_animation(animation_names[loop_key]).loop_mode = Animation.LOOP_LINEAR
+
+func _play_motion(motion: String) -> void:
+	if animation_player == null or not animation_names.has(motion):
+		return
+	var target: StringName = animation_names[motion]
+	if current_motion == motion and animation_player.is_playing():
+		return
+	current_motion = motion
+	animation_player.play(target, 0.16)
+	animation_player.speed_scale = 1.0 if motion in ["idle", "walk", "jump"] else 1.08
