@@ -9,6 +9,7 @@ var mission_marker: MeshInstance3D
 var in_car := false
 var mission_done := false
 var mission_time := 0.0
+var touch_interact_pressed := false
 
 func _ready() -> void:
 	_build_world()
@@ -28,7 +29,8 @@ func _process(delta: float) -> void:
 		mission_done = true
 		$HUD/Panel/Objective.text = "МИССИЯ ВЫПОЛНЕНА  •  +$500"
 		$HUD/Panel/Objective.add_theme_color_override("font_color", Color(0.4, 1.0, 0.7))
-	if Input.is_action_just_pressed("interact"):
+	if Input.is_action_just_pressed("interact") or touch_interact_pressed:
+		touch_interact_pressed = false
 		_toggle_vehicle()
 	if in_car:
 		$HUD/Panel/Status.text = "ЗА РУЛЁМ  •  E — ВЫЙТИ"
@@ -302,12 +304,6 @@ func _build_hud() -> void:
 	status.name = "Status"
 	status.text = "ПЕШКОМ  •  E — СЕСТЬ В МАШИНУ"
 	vb.add_child(status)
-	var interact_btn := Button.new()
-	interact_btn.text = "E  /  МАШИНА"
-	interact_btn.position = Vector2(20,140)
-	interact_btn.size = Vector2(170,58)
-	interact_btn.pressed.connect(_toggle_vehicle)
-	hud.add_child(interact_btn)
 	var joystick := Control.new()
 	joystick.name = "TouchPad"
 	joystick.set_script(preload("res://scripts/touch_pad.gd"))
