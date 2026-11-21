@@ -106,7 +106,7 @@ jobs:
           test -s build/NEON-COAST.apk
           unzip -t build/NEON-COAST.apk
           "$ANDROID_HOME/build-tools/34.0.0/apksigner" verify --verbose build/NEON-COAST.apk
-          sha256sum build/NEON-COAST.apk
+          sha256sum build/NEON-COAST-2.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
