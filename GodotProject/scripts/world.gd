@@ -314,3 +314,5 @@ func _toggle_vehicle() -> void:
 		player.get_node("Camera3D").current = true
 
 # Android CI rebuild trigger after export environment setup.
+
+# Rebuild after fixing escaped newline parse errors and adding startup validation.
