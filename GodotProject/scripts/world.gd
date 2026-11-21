@@ -149,29 +149,91 @@ func _build_player() -> void:
 	player = CharacterBody3D.new()
 	player.name = "Player"
 	player.set_script(PLAYER_SCRIPT)
-	player.position = Vector3(0,1,24)
+	player.position = Vector3(0, 1, 24)
 	add_child(player)
-	var body := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.42
-	capsule.height = 1.8
-	body.mesh = capsule
-	body.position.y = 0.9
-	body.material_override = _mat(Color(0.1,0.75,0.88))
-	player.add_child(body)
+
+	var visual := Node3D.new()
+	visual.name = "CharacterVisual"
+	player.add_child(visual)
+
+	var skin := _mat(Color(0.72, 0.46, 0.32))
+	skin.roughness = 0.88
+	var jacket := _mat(Color(0.035, 0.30, 0.34))
+	jacket.roughness = 0.62
+	var jacket_dark := _mat(Color(0.018, 0.13, 0.18))
+	var shirt := _mat(Color(0.83, 0.82, 0.72))
+	var pants := _mat(Color(0.055, 0.075, 0.12))
+	var shoe := _mat(Color(0.035, 0.04, 0.055))
+	var hair := _mat(Color(0.075, 0.045, 0.035))
+	var eye := _mat(Color(0.018, 0.014, 0.012))
+	var accent := _mat(Color(0.95, 0.48, 0.20))
+	accent.metallic = 0.25
+
+	# Athletic 1980s streetwear silhouette: bomber jacket, light shirt, dark denim.
+	var torso := Node3D.new()
+	torso.name = "Torso"
+	visual.add_child(torso)
+	_add_character_piece(torso, "Jacket", CapsuleMesh.new(), Vector3(0, 1.22, 0), Vector3(0.82, 0.88, 0.48), jacket)
+	_add_character_piece(torso, "Shirt", BoxMesh.new(), Vector3(0, 1.23, -0.245), Vector3(0.24, 0.65, 0.045), shirt)
+	_add_character_piece(torso, "JacketZip", BoxMesh.new(), Vector3(0, 1.22, -0.274), Vector3(0.025, 0.68, 0.018), accent)
+	_add_character_piece(torso, "CollarLeft", BoxMesh.new(), Vector3(-0.105, 1.62, -0.20), Vector3(0.16, 0.12, 0.08), jacket_dark)
+	_add_character_piece(torso, "CollarRight", BoxMesh.new(), Vector3(0.105, 1.62, -0.20), Vector3(0.16, 0.12, 0.08), jacket_dark)
+	_add_character_piece(torso, "Neck", CapsuleMesh.new(), Vector3(0, 1.72, 0), Vector3(0.28, 0.32, 0.28), skin)
+
+	# Head, hairline and readable facial features.
+	_add_character_piece(torso, "Head", SphereMesh.new(), Vector3(0, 1.98, -0.015), Vector3(0.48, 0.57, 0.43), skin)
+	_add_character_piece(torso, "Hair", SphereMesh.new(), Vector3(0, 2.16, 0.025), Vector3(0.50, 0.32, 0.46), hair)
+	_add_character_piece(torso, "SideHairL", BoxMesh.new(), Vector3(-0.205, 2.02, 0.025), Vector3(0.075, 0.27, 0.30), hair)
+	_add_character_piece(torso, "SideHairR", BoxMesh.new(), Vector3(0.205, 2.02, 0.025), Vector3(0.075, 0.27, 0.30), hair)
+	_add_character_piece(torso, "EyeL", SphereMesh.new(), Vector3(-0.095, 2.015, -0.207), Vector3(0.045, 0.035, 0.025), eye)
+	_add_character_piece(torso, "EyeR", SphereMesh.new(), Vector3(0.095, 2.015, -0.207), Vector3(0.045, 0.035, 0.025), eye)
+	_add_character_piece(torso, "Nose", SphereMesh.new(), Vector3(0, 1.965, -0.235), Vector3(0.055, 0.075, 0.07), skin)
+
+	# Arms are separate pivots so the walk/run cycle can animate them.
+	for side in [-1, 1]:
+		var arm := Node3D.new()
+		arm.name = "LeftArmPivot" if side == -1 else "RightArmPivot"
+		arm.position = Vector3(float(side) * 0.39, 1.55, 0)
+		visual.add_child(arm)
+		_add_character_piece(arm, "Sleeve", CapsuleMesh.new(), Vector3(0, -0.31, 0), Vector3(0.31, 0.78, 0.31), jacket)
+		_add_character_piece(arm, "Cuff", CylinderMesh.new(), Vector3(0, -0.62, 0), Vector3(0.22, 0.10, 0.22), jacket_dark)
+		_add_character_piece(arm, "Hand", SphereMesh.new(), Vector3(0, -0.76, -0.005), Vector3(0.19, 0.22, 0.16), skin)
+
+	# Jeans, articulated legs and sneakers.
+	_add_character_piece(visual, "Waist", BoxMesh.new(), Vector3(0, 0.91, 0), Vector3(0.62, 0.25, 0.38), pants)
+	for side in [-1, 1]:
+		var leg := Node3D.new()
+		leg.name = "LeftLegPivot" if side == -1 else "RightLegPivot"
+		leg.position = Vector3(float(side) * 0.17, 0.86, 0)
+		visual.add_child(leg)
+		_add_character_piece(leg, "Jeans", CapsuleMesh.new(), Vector3(0, -0.36, 0), Vector3(0.31, 0.82, 0.34), pants)
+		_add_character_piece(leg, "Sneaker", BoxMesh.new(), Vector3(0, -0.77, -0.075), Vector3(0.34, 0.18, 0.52), shoe)
+		_add_character_piece(leg, "Sole", BoxMesh.new(), Vector3(0, -0.855, -0.075), Vector3(0.35, 0.045, 0.53), shirt)
+
 	var col := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
-	shape.radius = 0.42
-	shape.height = 1.8
+	shape.radius = 0.34
+	shape.height = 1.92
 	col.shape = shape
-	col.position.y = 0.9
+	col.position.y = 0.96
 	player.add_child(col)
+
 	var camera := Camera3D.new()
 	camera.name = "Camera3D"
-	camera.position = Vector3(0,4.2,7.5)
-	camera.rotation_degrees = Vector3(-18,0,0)
+	camera.position = Vector3(0, 3.7, 6.8)
+	camera.rotation_degrees = Vector3(-17, 0, 0)
 	camera.current = true
 	player.add_child(camera)
+
+func _add_character_piece(parent: Node3D, piece_name: String, mesh: Mesh, pos: Vector3, piece_scale: Vector3, material: Material) -> MeshInstance3D:
+	var piece := MeshInstance3D.new()
+	piece.name = piece_name
+	piece.mesh = mesh
+	piece.position = pos
+	piece.scale = piece_scale
+	piece.material_override = material
+	parent.add_child(piece)
+	return piece
 
 func _build_car() -> void:
 	car = CharacterBody3D.new()
