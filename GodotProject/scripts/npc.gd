@@ -50,6 +50,29 @@ const DIALOGUE_LINES := [
 	"Какого хрена ты так медленно плетёшься, приятель?"
 ]
 
+const PLAYER_INTERACTION_LINES := [
+	"Эй, дружище! Ты тут недавно? Раньше я тебя в этом районе не видел.",
+	"Слышь, приятель, не знаешь, где здесь можно нормально перекусить?",
+	"Осторожнее на этой улице, брат. Тут водители совсем страх потеряли.",
+	"Эй, ты! Хорошо выглядишь. Куда направляешься?",
+	"Слушай, не одолжишь мелочь? До вечера совсем пусто в карманах.",
+	"Ты местный или просто город посмотреть приехал?",
+	"Не стой посреди дороги, приятель. Здесь машины летают как сумасшедшие.",
+	"Здорово! Вид у тебя такой, будто неприятности сами тебя находят.",
+	"Эй, дружище, погоди секунду. Ты случайно не знаешь, который час?",
+	"Слышь, не хочешь прогуляться до набережной? Там сейчас красиво.",
+	"Чего такой серьёзный? Расслабься, вечер только начинается.",
+	"Эй, я тебя заметил. Ты чего-то ищешь или просто гуляешь?",
+	"Держись поближе к свету, приятель. В этом районе по ночам всякое бывает.",
+	"Слушай, ты не видел тут парня в красной куртке? Он мне должен денег.",
+	"Ну что, как тебе наш город? Только честно, без туристических комплиментов.",
+	"Эй, красавчик, не проходи мимо. Есть минутка поговорить?",
+	"Смотри, куда идёшь, брат. Я не хочу сегодня собирать людей с асфальта.",
+	"Ты случайно не знаешь, где тут начинается старый бульвар?",
+	"О, знакомое лицо… Хотя нет, обознался. Бывает.",
+	"Погоди, дружище. У тебя вид человека, которому есть что рассказать."
+]
+
 const SITUATION_LINES := {
 	"fight_witness": [
 		"Эй, вы двое! Хотите друг друга поубивать — хотя бы с тротуара уберитесь!",
@@ -494,10 +517,11 @@ func _update_dialogue() -> void:
 		return
 	if not is_instance_valid(player_ref):
 		return
-	if global_position.distance_to(player_ref.global_position) >= 9.0 or talk_cooldown > 0.0:
+	var player_distance := global_position.distance_to(player_ref.global_position)
+	if player_distance >= 8.0 or talk_cooldown > 0.0:
 		return
 
-	# React to the most important nearby event first; ordinary chatter is only the fallback.
+	# The pedestrian addresses the hero directly when he is close enough to hear.
 	var nearby_fight := false
 	var nearby_body := false
 	for candidate in get_tree().get_nodes_in_group("fightable_npc"):
@@ -519,15 +543,17 @@ func _update_dialogue() -> void:
 		var player_speed := Vector2(player_ref.velocity.x, player_ref.velocity.z).length()
 		if player_speed > 6.2:
 			_speak_situation("runner")
-		elif global_position.z < -19.0 and global_position.z > -38.0:
-			_speak_situation("beach")
-		elif absf(global_position.z) < 9.0:
-			_speak_situation("boulevard")
-		elif global_position.z > 9.0 and global_position.z < 30.0:
-			_speak_situation("road")
 		else:
-			_speak_random(DIALOGUE_LINES)
-	talk_cooldown = randf_range(8.0, 13.0)
+			# Turn toward the hero and stop briefly to address him, not to the empty street.
+			var to_hero := player_ref.global_position - global_position
+			to_hero.y = 0.0
+			if to_hero.length() > 0.1:
+				rotation.y = atan2(-to_hero.x, -to_hero.z)
+			velocity.x = 0.0
+			velocity.z = 0.0
+			_play_animation("idle")
+			_speak_random(PLAYER_INTERACTION_LINES)
+	talk_cooldown = randf_range(9.0, 14.0)
 
 func _speak_situation(key: String) -> void:
 	var lines: Array = SITUATION_LINES.get(key, [])
@@ -565,7 +591,7 @@ func _queue_speech(line: String) -> void:
 	var rate := personal_voice_rate
 	var pitch := personal_voice_pitch
 	if is_instance_valid(dialogue_manager):
-		dialogue_manager.call("queue_line", get_instance_id(), line, voice_id, rate, pitch)
+		dialogue_manager.call("queue_line", get_instance_id(), line, voice_id, rate, pitch, player_ref.get_instance_id(), 12.0)
 	else:
 		DisplayServer.tts_speak(line, voice_id, rate, 1.0, pitch, get_instance_id(), true)
 
@@ -605,7 +631,9 @@ func _try_start_conversation() -> void:
 			"line": String(turn[1]),
 			"voice_id": first_voice if first_speaker else second_voice,
 			"rate": personal_voice_rate if first_speaker else int(partner.get("personal_voice_rate")),
-			"pitch": personal_voice_pitch if first_speaker else float(partner.get("personal_voice_pitch"))
+			"pitch": personal_voice_pitch if first_speaker else float(partner.get("personal_voice_pitch")),
+			"listener_id": player_ref.get_instance_id(),
+			"max_distance": 16.0
 		})
 	conversation_cooldown = 55.0
 	partner.set("conversation_cooldown", 55.0)
