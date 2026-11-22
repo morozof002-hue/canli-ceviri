@@ -212,13 +212,16 @@ var is_angry := false
 var russian_voices: PackedStringArray = PackedStringArray()
 var dialogue_bag: Array = []
 var angry_bag: Array = []
+var dialogue_manager: Node
 
 func _ready() -> void:
 	add_to_group("fightable_npc")
 	visual = HERO_SCENE.instantiate()
 	visual.name = "CivilianVisual"
 	visual.rotation.y = PI
-	visual.scale = Vector3.ONE * randf_range(0.90, 1.08)
+	visual.scale = Vector3(randf_range(0.91, 1.08), randf_range(0.94, 1.09), randf_range(0.91, 1.08))
+	_customize_appearance()
+	dialogue_manager = get_tree().get_first_node_in_group("npc_dialogue_manager")
 	personal_speed = randf_range(2.3, 3.1)
 	add_child(visual)
 	animation_player = _find_animation_player(visual)
@@ -231,6 +234,9 @@ func _ready() -> void:
 	collision.shape = capsule
 	collision.position.y = 0.91
 	add_child(collision)
+	collision_layer = 1
+	collision_mask = 1
+	safe_margin = 0.08
 	wander_dir = Vector3.RIGHT.rotated(Vector3.UP, randf() * TAU)
 	talk_cooldown = randf_range(2.0, 5.0)
 	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
@@ -282,6 +288,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_play_animation("idle")
 		_update_dialogue()
+	_apply_crowd_separation()
 	velocity.y = -0.3
 	move_and_slide()
 
@@ -308,7 +315,12 @@ func _speak_random(lines: Array) -> void:
 		bag = dialogue_bag
 	var line: String = bag.pop_back()
 	var voice_id: String = russian_voices[randi() % russian_voices.size()]
-	DisplayServer.tts_speak(line, voice_id, 95, randf_range(0.88, 1.12), randf_range(0.88, 1.04), get_instance_id(), true)
+	var rate := 95 + randi_range(-9, 9)
+	var pitch := randf_range(0.82, 1.16)
+	if is_instance_valid(dialogue_manager):
+		dialogue_manager.call("queue_line", get_instance_id(), line, voice_id, rate, pitch)
+	else:
+		DisplayServer.tts_speak(line, voice_id, rate, 1.0, pitch, get_instance_id(), true)
 
 func take_hit(from_position: Vector3) -> void:
 	if is_down:
@@ -371,6 +383,50 @@ func _revive() -> void:
 	_play_animation("idle")
 	set_physics_process(true)
 	talk_cooldown = randf_range(3.0, 6.0)
+
+func _customize_appearance() -> void:
+	# Give each pedestrian a distinct silhouette and a restrained clothing tint.
+	var palettes := [
+		Color(0.82, 0.94, 1.0), Color(1.0, 0.82, 0.72),
+		Color(0.78, 1.0, 0.82), Color(1.0, 0.94, 0.70),
+		Color(0.88, 0.82, 1.0), Color(1.0, 0.80, 0.91),
+		Color(0.78, 0.90, 0.96), Color(0.94, 0.94, 0.94)
+	]
+	var tint: Color = palettes[randi() % palettes.size()]
+	var meshes: Array[MeshInstance3D] = []
+	_collect_meshes(visual, meshes)
+	for mesh_instance in meshes:
+		if mesh_instance.mesh == null:
+			continue
+		for surface in range(mesh_instance.mesh.get_surface_count()):
+			var source := mesh_instance.get_active_material(surface)
+			if source is StandardMaterial3D:
+				var material := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
+				material.albedo_color = material.albedo_color * tint
+				mesh_instance.set_surface_override_material(surface, material)
+
+func _collect_meshes(node: Node, result: Array[MeshInstance3D]) -> void:
+	if node is MeshInstance3D:
+		result.append(node as MeshInstance3D)
+	for child in node.get_children():
+		_collect_meshes(child, result)
+
+func _apply_crowd_separation() -> void:
+	if is_down:
+		return
+	var push := Vector3.ZERO
+	for other in get_tree().get_nodes_in_group("fightable_npc"):
+		if other == self or not is_instance_valid(other) or other.get("is_down"):
+			continue
+		var away: Vector3 = global_position - other.global_position
+		away.y = 0.0
+		var distance := away.length()
+		if distance > 0.001 and distance < 0.95:
+			push += away.normalized() * ((0.95 - distance) / 0.95)
+	if push.length() > 0.01:
+		var separation := push.normalized() * 1.8
+		velocity.x = move_toward(velocity.x, velocity.x + separation.x, 8.0 * get_physics_process_delta_time())
+		velocity.z = move_toward(velocity.z, velocity.z + separation.z, 8.0 * get_physics_process_delta_time())
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer:
