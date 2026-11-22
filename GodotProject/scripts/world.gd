@@ -122,6 +122,16 @@ func _make_box(n: String, p: Vector3, s: Vector3, c: Color) -> MeshInstance3D:
 
 func _make_building(p: Vector3, s: Vector3, c: Color) -> void:
 	_make_box("Art-deco block", p, s, c)
+	# Buildings are solid physics obstacles, not just visible meshes.
+	var building_body := StaticBody3D.new()
+	building_body.name = "BuildingCollision"
+	var building_shape := CollisionShape3D.new()
+	var building_box := BoxShape3D.new()
+	building_box.size = s
+	building_shape.shape = building_box
+	building_body.position = p
+	building_body.add_child(building_shape)
+	add_child(building_body)
 	for floor in range(1, int(s.y/2.6)):
 		for side: int in [-1,1]:
 			var z: float = p.z + float(side) * (s.z/2.0 + 0.035)
