@@ -123,6 +123,16 @@ func take_hit(from_position: Vector3) -> void:
 		tween.tween_interval(1.8)
 		tween.tween_callback(queue_free)
 
+
+func _collect_meshes(node: Node) -> Array:
+	var result: Array = []
+	if node is MeshInstance3D:
+		result.append(node)
+	for child in node.get_children():
+		result.append_array(_collect_meshes(child))
+	return result
+
+
 func _find_animation_player(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer:
 		return node as AnimationPlayer
