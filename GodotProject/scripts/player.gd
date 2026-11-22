@@ -15,6 +15,8 @@ var animation_player: AnimationPlayer
 var animation_names: Dictionary = {}
 var current_motion := ""
 var attack_timer := 0.0
+var health := 100
+var hit_invulnerability := 0.0
 
 func _ready() -> void:
 	animation_player = _find_animation_player(self)
@@ -47,6 +49,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 	attack_timer = maxf(0.0, attack_timer - delta)
+	hit_invulnerability = maxf(0.0, hit_invulnerability - delta)
 	if attack_timer > 0.0 and animation_names.has("punch"):
 		_play_motion("punch")
 	elif not is_on_floor():
@@ -104,3 +107,14 @@ func start_attack() -> void:
 	if animation_names.has("punch"):
 		current_motion = ""
 		_play_motion("punch")
+
+func take_npc_hit(from_position: Vector3) -> void:
+	if hit_invulnerability > 0.0 or health <= 0:
+		return
+	hit_invulnerability = 0.7
+	health = maxi(0, health - 8)
+	var push := global_position - from_position
+	push.y = 0.0
+	if push.length() > 0.01:
+		velocity.x = push.normalized().x * 4.2
+		velocity.z = push.normalized().z * 4.2
