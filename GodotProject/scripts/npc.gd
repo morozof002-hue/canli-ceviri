@@ -390,6 +390,8 @@ var situation_bags: Dictionary = {}
 var situation_cooldown := 0.0
 var conversation_cooldown := 0.0
 var in_conversation := false
+var conversation_partner: Node3D
+var player_talk_pause := 0.0
 var dialogue_manager: Node
 var rival_target: Node3D
 var aggression := 0.0
@@ -441,6 +443,7 @@ func _physics_process(delta: float) -> void:
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
 	situation_cooldown = maxf(0.0, situation_cooldown - delta)
 	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
+	player_talk_pause = maxf(0.0, player_talk_pause - delta)
 	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	rival_scan_timer = maxf(0.0, rival_scan_timer - delta)
@@ -450,6 +453,23 @@ func _physics_process(delta: float) -> void:
 			rival_scan_timer = randf_range(2.5, 5.5)
 			if aggression > 0.68:
 				_pick_rival()
+	# When two pedestrians are talking, they stop and face one another.
+	# When addressing the hero, the pedestrian pauses and faces the player.
+	if in_conversation or player_talk_pause > 0.0:
+		velocity.x = move_toward(velocity.x, 0.0, delta * 12.0)
+		velocity.z = move_toward(velocity.z, 0.0, delta * 12.0)
+		var look_target: Node3D = conversation_partner if in_conversation else player_ref
+		if is_instance_valid(look_target):
+			var look_direction := look_target.global_position - global_position
+			look_direction.y = 0.0
+			if look_direction.length() > 0.1:
+				rotation.y = atan2(-look_direction.x, -look_direction.z)
+		_play_animation("idle")
+		velocity.y = -0.3 if is_on_floor() else velocity.y - 22.0 * delta
+		_apply_crowd_separation()
+		move_and_slide()
+		return
+
 	var moving := false
 	if is_instance_valid(rival_target):
 		var rival_offset: Vector3 = rival_target.global_position - global_position
@@ -552,6 +572,7 @@ func _update_dialogue() -> void:
 			velocity.x = 0.0
 			velocity.z = 0.0
 			_play_animation("idle")
+			player_talk_pause = randf_range(2.2, 3.6)
 			_speak_random(PLAYER_INTERACTION_LINES)
 	talk_cooldown = randf_range(9.0, 14.0)
 
@@ -638,15 +659,19 @@ func _try_start_conversation() -> void:
 	conversation_cooldown = 55.0
 	partner.set("conversation_cooldown", 55.0)
 	in_conversation = true
+	conversation_partner = partner
 	partner.set("in_conversation", true)
+	partner.set("conversation_partner", self)
 	velocity = Vector3.ZERO
 	partner.set("velocity", Vector3.ZERO)
 	dialogue_manager.call("queue_conversation", turns)
 	get_tree().create_timer(105.0).timeout.connect(func():
 		if is_instance_valid(self):
 			in_conversation = false
+			conversation_partner = null
 		if is_instance_valid(partner):
 			partner.set("in_conversation", false)
+			partner.set("conversation_partner", null)
 	)
 
 func _pick_rival() -> void:
