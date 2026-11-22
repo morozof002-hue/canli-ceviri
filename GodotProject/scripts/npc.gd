@@ -49,6 +49,50 @@ const DIALOGUE_LINES := [
 	"Ну и денёк, сплошная задница на колёсах!",
 	"Какого хрена ты так медленно плетёшься, приятель?"
 ]
+
+const POETIC_CONVERSATIONS := [
+	[
+		[0, "О сударь, отчего вы хмуритесь столь мрачно? Ужели солнце скрылось за тучей, или кошелёк ваш опустел прежде срока?"],
+		[1, "О нет, любезный друг! Кошелёк мой полон ветра, а сердце — горьких дум: вчерашний трактирщик подал мне суп, в котором ложка стояла, словно памятник моей печали."],
+		[0, "Ха! Значит, повар нынче стал ваятелем, а вы — ценителем искусств. Не гневайтесь: в наш железный век и камень порой оказывается питательнее обеда."],
+		[1, "Вы шутите, сударь, но шутка ваша остра, как сабля. Я трижды просил добавки, и трижды мне ответствовали: «Потерпите, гражданин, прекрасное требует ожидания»."],
+		[0, "Таков удел поэта и голодного гуляки: один ожидает вдохновения, другой — котлеты. Но оба, признаться, чаще получают лишь сквозняк да счёт."],
+		[1, "Клянусь, кабы я владел пером, я написал бы оду этому трактиру — столь грозную, что сам хозяин сбежал бы, оставив нам кухню и погреб."],
+		[0, "Не тратьте пороху на оду, друг мой. Напишите лучше записку: «Верните деньги и накормите человека». В простоте иной раз заключена великая сила."],
+		[1, "Вы правы. Пойдём же, пока мой желудок не сочинил трагедию в пяти действиях и не заставил меня съесть собственную шляпу."]
+	],
+	[
+		[0, "Позвольте спросить, сударь: вы всегда ступаете по мостовой с видом полководца, которому весь город задолжал победу?"],
+		[1, "А вы всегда раздаёте советы с таким видом, будто лично изобрели разум? Я просто иду домой, а не веду армию на неприятельский редут."],
+		[0, "Домой? В столь прекрасный вечер? Да это почти преступление против поэзии! Вон закат разлил над крышами медь, а вы прячетесь от него за воротником."],
+		[1, "Закат прекрасен, спору нет. Но красота красотой, а завтра вставать ни свет ни заря. Романтики, сударь, не платят за квартиру."],
+		[0, "Ах, деньги! Сей вечный драматург портит финал любой комедии. Однако скажите: разве не лучше прожить вечер с открытыми глазами, чем всю жизнь смотреть в расписание?"],
+		[1, "Слова ваши сладки, словно мёд, да только будильник утром беспощаден, как ревнивый муж. Он не ведает ни рифмы, ни милосердия."],
+		[0, "Тогда заключим мир: вы подарите вечеру десять минут, а я обещаю не произносить ни единой речи о вечности."],
+		[1, "Десять минут — так и быть. Но если вы заговорите о бессмертии души, я оставлю вас спорить с фонарным столбом."]
+	],
+	[
+		[0, "О друг мой, взгляните на сию публику! Каждый спешит, толкается, сердится, будто за углом раздают наследство."],
+		[1, "А вы, стало быть, один не спешите? Уж не потому ли, что наследство ваше давно пропито в мечтах и обещаниях?"],
+		[0, "Острите, сударь, острите! Но я предпочитаю бедность с достоинством богатству, нажитому скукой. Хотя богатство с хорошим ужином я бы тоже не отверг."],
+		[1, "Вот наконец мысль здравая! Я знал, что под вашим бархатным красноречием скрывается обыкновенный человек, мечтающий о горячем пироге."],
+		[0, "Пирог — предмет высокой философии. В нём встречаются тесто и начинка, подобно тому как в человеке спорят возвышенная душа и низменный аппетит."],
+		[1, "Тогда философ мой, ведите нас к пекарне. Там мы разрешим сей спор без диспутов, посредством вилки и честного раздела."],
+		[0, "Согласен! Но предупреждаю: за последний пирог я готов вступить в словесную дуэль, а при крайней нужде — в очередь."],
+		[1, "В очередь? Вот это уже подвиг, достойный летописца. Идёмте, пока ваш аппетит не объявил войну всему кварталу."]
+	],
+	[
+		[0, "Скажите, сударыня, отчего вы так печальны? Неужто город обидел вас своим шумом, пылью или отсутствием достойных поклонников?"],
+		[1, "Город меня не обидел, сударь. Он лишь ежедневно напоминает, что люди умеют говорить часами, а слушать — едва ли минуту."],
+		[0, "О, это наблюдение достойно пера! Мы строим башни до небес, изобретаем машины, но не можем возвести маленький мост от одного сердца к другому."],
+		[1, "Красиво сказано. Но мост, увы, не строится одними словами. Иной обещает звёзды, а забывает даже поздороваться наутро."],
+		[0, "Тогда позвольте мне не обещать звёзд. Я могу лишь предложить прогулку, чашку чая и честное молчание, когда слова окажутся лишними."],
+		[1, "Вот это предложение куда приятнее громких клятв. Только чай выбираю я: однажды вы уже заказали нечто, что официант назвал напитком, а я — наказанием."],
+		[0, "Справедливо! Отныне вы ведаете чаем, я — дорогой, а судьба пусть решает, будет ли вечер комедией или романом."],
+		[1, "Пусть будет просто хорошим вечером. Для начала этого довольно, а там посмотрим, заслужили ли мы продолжение."]
+	]
+]
+
 const ANGRY_LINES := [
 	"Ты охуевший ублюдок, ебаный мудак! Получай!",
 	"Ты чё, гандон заёбанный, совсем берега попутал?!",
@@ -272,6 +316,10 @@ var player_ref: Node3D
 var is_down := false
 var is_angry := false
 var russian_voices: PackedStringArray = PackedStringArray()
+var personal_voice_id := ""
+var personal_voice_rate := 95
+var personal_voice_pitch := 1.0
+var conversation_cooldown := 0.0
 var dialogue_bag: Array = []
 var angry_bag: Array = []
 var poetic_bag: Array = []
@@ -314,6 +362,10 @@ func _ready() -> void:
 	talk_cooldown = randf_range(2.0, 5.0)
 	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
 		russian_voices = DisplayServer.tts_get_voices_for_language("ru")
+	if not russian_voices.is_empty():
+		personal_voice_id = russian_voices[randi() % russian_voices.size()]
+	personal_voice_rate = randi_range(84, 108)
+	personal_voice_pitch = randf_range(0.78, 1.22)
 
 func set_player_reference(target: Node3D) -> void:
 	player_ref = target
@@ -322,6 +374,7 @@ func _physics_process(delta: float) -> void:
 	if is_down:
 		return
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
+	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
 	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
 	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
@@ -388,6 +441,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			_play_animation("idle")
 		_update_dialogue()
+		_try_start_conversation()
 	_apply_crowd_separation()
 	_try_step_up(delta)
 	velocity.y = -0.3 if is_on_floor() else velocity.y - 22.0 * delta
@@ -473,14 +527,55 @@ func _speak_random(lines: Array) -> void:
 func _queue_speech(line: String) -> void:
 	if russian_voices.is_empty():
 		return
-	var voice_id: String = russian_voices[randi() % russian_voices.size()]
-	var rate := 95 + randi_range(-9, 9)
-	var pitch := randf_range(0.82, 1.16)
+	var voice_id: String = personal_voice_id if not personal_voice_id.is_empty() else russian_voices[0]
+	var rate := personal_voice_rate
+	var pitch := personal_voice_pitch
 	if is_instance_valid(dialogue_manager):
 		dialogue_manager.call("queue_line", get_instance_id(), line, voice_id, rate, pitch)
 	else:
 		DisplayServer.tts_speak(line, voice_id, rate, 1.0, pitch, get_instance_id(), true)
 
+
+
+func _try_start_conversation() -> void:
+	if conversation_cooldown > 0.0 or is_angry or is_instance_valid(rival_target) or not is_instance_valid(dialogue_manager):
+		return
+	if randf() > 0.006:
+		return
+	var partner: Node3D = null
+	var nearest := 4.8
+	for candidate in get_tree().get_nodes_in_group("fightable_npc"):
+		if candidate == self or not is_instance_valid(candidate) or candidate.get("is_down") or candidate.get("is_angry"):
+			continue
+		if candidate.get("conversation_cooldown") != null and float(candidate.get("conversation_cooldown")) > 0.0:
+			continue
+		var distance := global_position.distance_to(candidate.global_position)
+		if distance < nearest:
+			nearest = distance
+			partner = candidate
+	if partner == null:
+		return
+	var script: Array = POETIC_CONVERSATIONS[randi() % POETIC_CONVERSATIONS.size()]
+	var turns: Array[Dictionary] = []
+	var first_id := get_instance_id()
+	var second_id := partner.get_instance_id()
+	var first_voice := personal_voice_id
+	var second_voice: String = String(partner.get("personal_voice_id"))
+	if first_voice.is_empty() or second_voice.is_empty():
+		return
+	for turn in script:
+		var first_speaker := int(turn[0]) == 0
+		var speaker: Node3D = self if first_speaker else partner
+		turns.append({
+			"speaker_id": first_id if first_speaker else second_id,
+			"line": String(turn[1]),
+			"voice_id": first_voice if first_speaker else second_voice,
+			"rate": personal_voice_rate if first_speaker else int(partner.get("personal_voice_rate")),
+			"pitch": personal_voice_pitch if first_speaker else float(partner.get("personal_voice_pitch"))
+		})
+	conversation_cooldown = 55.0
+	partner.set("conversation_cooldown", 55.0)
+	dialogue_manager.call("queue_conversation", turns)
 
 func _pick_rival() -> void:
 	var candidates := get_tree().get_nodes_in_group("fightable_npc")
