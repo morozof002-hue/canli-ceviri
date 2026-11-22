@@ -32,6 +32,21 @@ const DIALOGUE_LINES := [
 	"Не жизнь, а сплошная карусель, мать её.",
 	"Слушай, а ты всегда так быстро ходишь?",
 	"Если ищешь приключения — ты их уже нашёл, дружок."
+	"Да пошло оно всё к чёрту, сегодня не мой день!",
+	"Какого хрена тут опять раскопали дорогу?",
+	"Отстаньте все на пять минут, дайте пожить!",
+	"Кто поставил эту колымагу поперёк тротуара?",
+	"Да чтоб тебя! Чуть кофе не расплескал!",
+	"С такими ценами скоро буду питаться воздухом.",
+	"Нормальный денёк, если не считать всей этой хрени.",
+	"Чёртова жара, асфальт сейчас расплавится!",
+	"Мне бы сейчас газировки и выходной.",
+	"Эй, народ, кто-нибудь видел мои очки?",
+	"Да ну его к бесу, разберусь завтра.",
+	"Не задавай вопросов, на которые сам не хочешь знать ответ!",
+	"Я не опаздываю, это часы слишком торопятся.",
+	"Кто-нибудь объяснит, что здесь вообще происходит?",
+	"У меня сегодня настроение — никого не трогать!"
 ]
 const ANGRY_LINES := [
 	"Ты совсем охренел?! Получай!",
@@ -44,6 +59,21 @@ const ANGRY_LINES := [
 	"Я тебе сейчас объясню по-хорошему!",
 	"Отвали от меня, придурок!",
 	"Ну держись, гад!"
+	"Ты совсем охренел?! Получай, ублюдок!",
+	"Ещё раз подойдёшь — пожалеешь, мать твою!",
+	"Я тебе сейчас все зубы пересчитаю!",
+	"Отвали, сукин сын, пока цел!",
+	"Ну всё, ты меня достал!",
+	"Думаешь, самый крутой? Сейчас проверим!",
+	"Я запомнил твою рожу, мразь!",
+	"Не убегай, трус! Разговор не закончен!",
+	"Подойди поближе — я тебе объясню!",
+	"Ты за это ответишь, понял?!",
+	"Вот же наглый ублюдок!",
+	"Сейчас получишь так, что мало не покажется!",
+	"Ты нарываешься, чёрт тебя дери!",
+	"От меня не уйдёшь, гадёныш!",
+	"Да пошёл ты! На тебе!"
 ]
 
 var health := 8
@@ -51,6 +81,9 @@ var wander_dir := Vector3.ZERO
 var wander_timer := 0.0
 var talk_cooldown := 0.0
 var attack_cooldown := 0.0
+var hop_cooldown := 0.0
+var personal_speed := 0.0
+var respawn_delay := 22.0
 var body_material: StandardMaterial3D
 var animation_player: AnimationPlayer
 var animations: Dictionary = {}
@@ -66,7 +99,8 @@ func _ready() -> void:
 	visual = HERO_SCENE.instantiate()
 	visual.name = "CivilianVisual"
 	visual.rotation.y = PI
-	visual.scale = Vector3.ONE * randf_range(0.88, 1.02)
+	visual.scale = Vector3.ONE * randf_range(0.90, 1.08)
+	personal_speed = randf_range(2.3, 3.1)
 	add_child(visual)
 	animation_player = _find_animation_player(visual)
 	_cache_animations()
@@ -90,6 +124,7 @@ func _physics_process(delta: float) -> void:
 	if is_down:
 		return
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
+	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	var moving := false
 	if is_angry and is_instance_valid(player_ref):
@@ -98,8 +133,9 @@ func _physics_process(delta: float) -> void:
 		var distance := offset.length()
 		if distance > 1.45:
 			var direction := offset.normalized()
-			velocity.x = move_toward(velocity.x, direction.x * 2.7, delta * 7.0)
-			velocity.z = move_toward(velocity.z, direction.z * 2.7, delta * 7.0)
+			velocity.x = move_toward(velocity.x, direction.x * personal_speed, delta * 7.0)
+			velocity.z = move_toward(velocity.z, direction.z * personal_speed, delta * 7.0)
+			_try_hop(direction)
 			rotation.y = atan2(-direction.x, -direction.z)
 			moving = true
 			_play_animation("walk")
@@ -118,7 +154,8 @@ func _physics_process(delta: float) -> void:
 			wander_timer = randf_range(1.8, 4.2)
 			wander_dir = Vector3.RIGHT.rotated(Vector3.UP, randf() * TAU)
 		velocity.x = move_toward(velocity.x, wander_dir.x * 0.8, delta * 2.2)
-		velocity.z = move_toward(velocity.z, wander_dir.z * 0.8, delta * 2.2)
+		velocity.z = move_toward(velocity.z, wander_dir.z * personal_speed * 0.35, delta * 2.2)
+		_try_hop(wander_dir)
 		moving = Vector2(velocity.x, velocity.z).length() > 0.12
 		if moving:
 			rotation.y = atan2(-velocity.x, -velocity.z)
@@ -157,7 +194,6 @@ func take_hit(from_position: Vector3) -> void:
 	if health <= 0:
 		is_down = true
 		is_angry = false
-		DisplayServer.tts_stop()
 		collision_layer = 0
 		collision_mask = 0
 		for child in get_children():
@@ -168,6 +204,43 @@ func take_hit(from_position: Vector3) -> void:
 		if not animations.has("death"):
 			var tween := create_tween()
 			tween.tween_property(visual, "rotation:z", visual.rotation.z + deg_to_rad(82.0), 0.45)
+		get_tree().create_timer(respawn_delay).timeout.connect(_revive)
+
+
+func _try_hop(direction: Vector3) -> void:
+	if hop_cooldown > 0.0 or not is_on_floor() or direction.length() < 0.1:
+		return
+	var flat := direction.normalized()
+	var space := get_world_3d().direct_space_state
+	var low_from := global_position + Vector3.UP * 0.45
+	var high_from := global_position + Vector3.UP * 1.25
+	var low_query := PhysicsRayQueryParameters3D.create(low_from, low_from + flat * 0.85)
+	low_query.exclude = [get_rid()]
+	var high_query := PhysicsRayQueryParameters3D.create(high_from, high_from + flat * 0.85)
+	high_query.exclude = [get_rid()]
+	var low_hit := space.intersect_ray(low_query)
+	var high_hit := space.intersect_ray(high_query)
+	if not low_hit.is_empty() and high_hit.is_empty():
+		velocity.y = 5.0
+		hop_cooldown = 1.25
+		_play_animation("jump")
+
+func _revive() -> void:
+	if not is_inside_tree():
+		return
+	health = 8
+	is_down = false
+	is_angry = false
+	velocity = Vector3.ZERO
+	collision_layer = 1
+	collision_mask = 1
+	for child in get_children():
+		if child is CollisionShape3D:
+			child.set_deferred("disabled", false)
+	current_animation = ""
+	_play_animation("idle")
+	set_physics_process(true)
+	talk_cooldown = randf_range(3.0, 6.0)
 
 func _find_animation_player(node: Node) -> AnimationPlayer:
 	if node is AnimationPlayer:
