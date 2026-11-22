@@ -25,6 +25,7 @@ var animation_player: AnimationPlayer
 var animations: Dictionary = {}
 var current_animation := ""
 var visual: Node3D
+var mesh_nodes: Array = []
 var speech: Label3D
 var player_ref: Node3D
 var is_down := false
@@ -36,6 +37,7 @@ func _ready() -> void:
 	visual.rotation.y = PI
 	visual.scale = Vector3.ONE * randf_range(0.88, 1.02)
 	add_child(visual)
+	mesh_nodes = _collect_meshes(visual)
 	animation_player = _find_animation_player(visual)
 	_cache_animations()
 	_play_animation("idle")
@@ -158,7 +160,7 @@ func _play_animation(key: String) -> void:
 func _set_visual_tint(color: Color) -> void:
 	if visual == null:
 		return
-	for node in _collect_meshes(visual):
+	for node in mesh_nodes:
 		if hit_flash > 0.0:
 			node.modulate = color
 		else:
