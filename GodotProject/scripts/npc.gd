@@ -193,6 +193,68 @@ const ANGRY_LINES := [
 	"Да ты просто ходячий повод для нервного срыва!",
 	"Убирайся, пока я ещё помню слова без мата!",
 ]
+const POETIC_DIALOGUES := [
+	[
+		["a", "О милый друг, взгляни на этот край: здесь море шепчет, будто старый сказочник, а город, позабыв покой и рай, гремит мотором, словно бой барабанный."],
+		["b", "Я вижу, сударь, дивную картину: волна блестит, как царственный паркет; но человек за медную машину готов отдать и честь, и весь обед."],
+		["a", "Вчера я встретил франта у причала: он клялся, будто знает светский тон; но как сирена громко зазвучала, он вмиг забыл и шпагу, и поклон."],
+		["b", "Таков наш век: в нём много блеска, мало толку; всяк строит вид, что мудр и знаменит. А я предпочитаю тихо ёлку... простите, тень, где ветер говорит."],
+		["a", "Не спорю я: толпа полна загадок, один кричит, другой несётся вскачь. Но даже в шуме есть своя отрада: смешон порой надутый этот важный грач."],
+		["b", "Пойдём же прочь от суеты базарной, где каждый норовит урвать кусок; поговорим о вечности и тайне, покуда солнце клонится на бок."],
+		["a", "Пойдём, мой друг. Но прежде, ради чести, скажи: кто нынче лучший стихотворец?"],
+		["b", "Кто слушает прибой и не кичится. А спор о славе оставим для глупцов."]
+	],
+	[
+		["a", "Скажи, сосед, зачем ты хмуришь брови? Ужель судьба опять тебя гнетёт?"],
+		["b", "Мне лавочник назначил цену втрое, а кошелёк мой песен не поёт."],
+		["a", "О, жадность! Сей порок старее мира; он князь среди торговых площадей. Купец порой любезнее банкира, пока не спросишь цену у дверей."],
+		["b", "Я молвил: «Друг, смягчи свою гордыню, ведь я не граф и не заморский шах». Он отвечал: «За эту апельсину отдашь последний рубль — и будешь прав»."],
+		["a", "Так выпьем же лимонаду за свободу от цен, что скачут выше облаков! Пусть честный труд избавит нас от пота, а разум — от торговых дураков."],
+		["b", "Ты говоришь красиво, словно в книге, но счёт за ужин всё равно придёт. Поэт свободен только на бумаге, а в жизни каждый платит за компот."],
+		["a", "И всё ж не будем унывать напрасно: смеётся тот, кто не продал мечту."],
+		["b", "Согласен. Только спорить с продавцами я больше никогда не пойду."]
+	],
+	[
+		["a", "Однажды я увидел даму дивной стати: она прошла, и стих мой ожил вдруг. Я был готов ей сердце преподати, но рядом оказался важный друг."],
+		["b", "И что же? Ты вступил с ним в поединок, как благородный рыцарь прежних лет?"],
+		["a", "Нет, сударь, он купил ей апельсин и тем разрушил мой любовный сон. Я понял: не спасёт ни стих, ни чин, коль у соперника полнее кошелёк."],
+		["b", "Любовь не торг, мой бедный сочинитель, не всякий взгляд сулит сердцам венец. Порой молчит прекрасная обитель, когда болтлив и шумен молодец."],
+		["a", "Но как молчать, когда душа пылает? Когда закат румянит небосвод, и сердце имя нежное роняет, как лист осенний падает в полёт?"],
+		["b", "Скажи ей просто: «Ваше появленье мне подарило солнечный рассвет». И не проси немедленно спасенья — любовь не любит торопливых лет."],
+		["a", "Пожалуй, ты мудрее всех поэтов, хоть сам стихи не пишешь никогда."],
+		["b", "Я просто много слушал комплиментов. И убегал, когда грозила беда."]
+	],
+	[
+		["a", "Что за народ пошёл! Взгляни на площадь: один ругает мир, другой молчит. А третий, раздувая грудь и ноздри, о собственном величье говорит."],
+		["b", "Не осуждай толпу столь беспощадно: в любом из нас живёт смешной актёр. Один мечтает выглядеть нарядно, другой считает собственный забор."],
+		["a", "Вчера двое сцепились у фонтана из-за пустого места для авто. Один кричал, что честь его попрана, другой не понимал уже за что."],
+		["b", "И чем закончилась сия баталия? Ужель свершился подвиг роковой?"],
+		["a", "Пришёл старик с метлой, сказал: «Достали!» — и оба разошлись своей тропой."],
+		["b", "Вот истинный герой! Без шпаги, без мундира он усмирил надменных господ. Порой метла сильнее эскадрона, когда в руках её спокойный народ."],
+		["a", "Запомню сей урок на долгий вечер: не всякий спор достоин наших сил."],
+		["b", "Иди домой, пока не встретил третий, который снова правду полюбил."]
+	],
+	[
+		["a", "Мне город этот кажется загадкой: дворцы стеклянны, улицы шумят; а за углом старушка с важной хваткой торгует тем, что все вокруг едят."],
+		["b", "В нём прошлое и будущее спорят, как два соседа из-за старых стен. Здесь новый блеск старинный двор укроет, а ветер помнит сотни перемен."],
+		["a", "Я бы хотел уехать в край далёкий, где тишина и звёзды без числа."],
+		["b", "Но ты забудешь шум его жестокий, когда душа соскучится сперва."],
+		["a", "Ты прав, мой друг: родная пыль дороже порой дворцов, где золото блестит. И даже дождь, что сапоги нам мочит, знакомой песней в памяти звучит."],
+		["b", "Так сохраним же в сердце эту пристань, где море учит терпеливо ждать. И пусть наш путь бывает каменистым — не поздно нам смеяться и мечтать."],
+		["a", "Ты говоришь, как будто сам из книжки, где каждый слог отточен и высок."],
+		["b", "А ты молчи, пока не стал поэтом: от долгих слов устанет даже бог."]
+	],
+	[
+		["a", "Приятель, отчего ты так сердит? Твой взгляд темнее тучи над заливом."],
+		["b", "Меня какой-то тип задел плечом, а после заявил, что я счастливый."],
+		["a", "Оставь его: не стоит тратить гнев на тех, кто мыслит локтем вместо слова. Пусть лучше ветер унесёт напев, чем мы начнём сраженье бестолково."],
+		["b", "Но честь моя! Неужто промолчать, когда нахал смеётся мне вослед?"],
+		["a", "Порой сильнее — гордо отступать. Не каждый шум достоин дать ответ."],
+		["b", "Ты прав. Пускай он властвует над пылью, а мы пойдём смотреть морской прибой. Там волны спорят с берегом красиво, но берег остаётся сам собой."],
+		["a", "Вот это речь! В ней мудрость и отвага, и ни единой капли пустоты."],
+		["b", "Пойдём скорей, пока опять какой-нибудь герой не начал спорить из-за красоты."]
+	]
+]
 var health := 8
 var wander_dir := Vector3.ZERO
 var wander_timer := 0.0
@@ -212,6 +274,9 @@ var is_angry := false
 var russian_voices: PackedStringArray = PackedStringArray()
 var dialogue_bag: Array = []
 var angry_bag: Array = []
+var poetic_bag: Array = []
+var conversation_cooldown := 0.0
+var in_conversation := false
 var dialogue_manager: Node
 var rival_target: Node3D
 var aggression := 0.0
@@ -257,6 +322,7 @@ func _physics_process(delta: float) -> void:
 	if is_down:
 		return
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
+	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
 	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
 	rival_scan_timer = maxf(0.0, rival_scan_timer - delta)
@@ -328,14 +394,68 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _update_dialogue() -> void:
-	if not is_instance_valid(player_ref) or is_down or is_angry:
+	if is_down or is_angry or in_conversation:
+		return
+	_try_start_poetic_conversation()
+	if in_conversation:
+		return
+	if not is_instance_valid(player_ref):
 		return
 	if global_position.distance_to(player_ref.global_position) < 7.0 and talk_cooldown <= 0.0:
 		_speak_random(DIALOGUE_LINES)
-		talk_cooldown = randf_range(5.0, 9.0)
+		talk_cooldown = randf_range(10.0, 16.0)
+
+func _try_start_poetic_conversation() -> void:
+	if conversation_cooldown > 0.0 or not is_instance_valid(dialogue_manager):
+		return
+	var candidates := get_tree().get_nodes_in_group("fightable_npc")
+	var partner: Node3D = null
+	var nearest := 5.2
+	for candidate in candidates:
+		if candidate == self or not is_instance_valid(candidate):
+			continue
+		if candidate.get("is_down") or candidate.get("is_angry") or candidate.get("in_conversation"):
+			continue
+		if float(candidate.get("conversation_cooldown")) > 0.0:
+			continue
+		var distance := global_position.distance_to(candidate.global_position)
+		if distance < nearest:
+			nearest = distance
+			partner = candidate
+	if partner == null or randf() > 0.012:
+		return
+	in_conversation = true
+	partner.set("in_conversation", true)
+	conversation_cooldown = randf_range(42.0, 65.0)
+	partner.set("conversation_cooldown", randf_range(42.0, 65.0))
+	velocity.x = 0.0
+	velocity.z = 0.0
+	partner.set("velocity", Vector3.ZERO)
+	if poetic_bag.is_empty():
+		poetic_bag = POETIC_DIALOGUES.duplicate(true)
+		poetic_bag.shuffle()
+	var scene: Array = poetic_bag.pop_back()
+	for exchange in scene:
+		var line_speaker: String = String(exchange[0])
+		var line_text: String = String(exchange[1])
+		if line_speaker == "a":
+			_queue_speech(line_text)
+		elif partner.has_method("queue_poetic_line"):
+			partner.call("queue_poetic_line", line_text)
+	# Let the characters resume walking after the queued conversation has had time to play.
+	var release_time := 58.0
+	get_tree().create_timer(release_time).timeout.connect(func():
+		if is_instance_valid(self):
+			in_conversation = false
+		if is_instance_valid(partner):
+			partner.set("in_conversation", false)
+	)
+
+func queue_poetic_line(line: String) -> void:
+	_queue_speech(line)
 
 func _speak_random(lines: Array) -> void:
-	if russian_voices.is_empty() or lines.is_empty():
+	if lines.is_empty():
 		return
 	var bag: Array
 	if lines == ANGRY_LINES:
@@ -348,7 +468,11 @@ func _speak_random(lines: Array) -> void:
 			dialogue_bag = lines.duplicate()
 			dialogue_bag.shuffle()
 		bag = dialogue_bag
-	var line: String = bag.pop_back()
+	_queue_speech(String(bag.pop_back()))
+
+func _queue_speech(line: String) -> void:
+	if russian_voices.is_empty():
+		return
 	var voice_id: String = russian_voices[randi() % russian_voices.size()]
 	var rate := 95 + randi_range(-9, 9)
 	var pitch := randf_range(0.82, 1.16)
