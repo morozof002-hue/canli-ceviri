@@ -485,10 +485,10 @@ func _queue_speech(line: String) -> void:
 func _try_start_conversation() -> void:
 	if conversation_cooldown > 0.0 or is_angry or is_instance_valid(rival_target) or not is_instance_valid(dialogue_manager):
 		return
-	if randf() > 0.006:
-		return
+	# Start a literary conversation whenever another idle pedestrian is nearby.
+	# Do not rely on a tiny per-frame random chance: NPCs may pass each other too quickly.
 	var partner: Node3D = null
-	var nearest := 4.8
+	var nearest := 8.0
 	for candidate in get_tree().get_nodes_in_group("fightable_npc"):
 		if candidate == self or not is_instance_valid(candidate) or candidate.get("is_down") or candidate.get("is_angry"):
 			continue
