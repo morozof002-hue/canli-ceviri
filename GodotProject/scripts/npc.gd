@@ -323,7 +323,6 @@ var dialogue_bag: Array = []
 var angry_bag: Array = []
 var conversation_cooldown := 0.0
 var in_conversation := false
-var in_conversation := false
 var dialogue_manager: Node
 var rival_target: Node3D
 var aggression := 0.0
