@@ -221,10 +221,10 @@ func _build_car() -> void:
 
 func _build_npcs() -> void:
 	var positions := [
-		Vector3(-12, 0, 11), Vector3(-5, 0, -8),
-		Vector3(11, 0, 5), Vector3(20, 0, 15),
-		Vector3(34, 0, -8), Vector3(-28, 0, 2),
-		Vector3(43, 0, 22), Vector3(4, 0, -18)
+		Vector3(-3, 0, 18), Vector3(4, 0, 14),
+		Vector3(9, 0, 20), Vector3(-10, 0, 8),
+		Vector3(18, 0, 15), Vector3(-24, 0, 2),
+		Vector3(34, 0, -8), Vector3(4, 0, -18)
 	]
 	for i in range(positions.size()):
 		var npc := CharacterBody3D.new()
@@ -232,11 +232,13 @@ func _build_npcs() -> void:
 		npc.set_script(preload("res://scripts/npc.gd"))
 		npc.position = positions[i]
 		add_child(npc)
+		npc.call("set_player_reference", player)
 
 func _attack_nearby_npc() -> void:
 	if attack_cooldown > 0.0 or in_car:
 		return
 	attack_cooldown = 0.62
+	player.call("start_attack")
 	var facing := -player.global_transform.basis.z
 	var nearest: Node3D = null
 	var nearest_distance := 2.25
@@ -250,7 +252,7 @@ func _attack_nearby_npc() -> void:
 			nearest_distance = distance
 	if nearest != null:
 		nearest.call("take_hit", player.global_position)
-		status_label.text = "УДАР!  •  У прохожего 3 удара здоровья"
+		status_label.text = "ПОПАЛ!  •  У прохожего осталось %d HP" % int(nearest.get("health"))
 	else:
 		status_label.text = "НИКОГО РЯДОМ — ПОДОЙДИ БЛИЖЕ"
 
