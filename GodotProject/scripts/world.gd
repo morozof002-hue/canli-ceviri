@@ -223,6 +223,11 @@ func _build_car() -> void:
 	car.add_child(col)
 
 func _build_npcs() -> void:
+	var manager := Node.new()
+	manager.name = "NPCDialogueManager"
+	manager.set_script(preload("res://scripts/dialogue_manager.gd"))
+	manager.add_to_group("npc_dialogue_manager")
+	add_child(manager)
 	var positions := [
 		Vector3(-3, 0, 18), Vector3(4, 0, 14),
 		Vector3(9, 0, 20), Vector3(-10, 0, 8),
