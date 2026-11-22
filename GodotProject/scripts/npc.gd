@@ -87,10 +87,6 @@ func _physics_process(delta: float) -> void:
 		_play_animation("walk")
 	else:
 		_play_animation("idle")
-	if hit_flash > 0.0:
-		_set_visual_tint(Color(1.0, 0.35, 0.25))
-	else:
-		_set_visual_tint(Color.WHITE)
 	_update_dialogue()
 
 func _update_dialogue() -> void:
@@ -157,19 +153,3 @@ func _play_animation(key: String) -> void:
 	current_animation = key
 	animation_player.play(animations[key], 0.14)
 
-func _set_visual_tint(color: Color) -> void:
-	if visual == null:
-		return
-	for node in mesh_nodes:
-		if hit_flash > 0.0:
-			node.modulate = color
-		else:
-			node.modulate = Color.WHITE
-
-func _collect_meshes(root: Node) -> Array:
-	var found: Array = []
-	for child in root.get_children():
-		if child is MeshInstance3D:
-			found.append(child)
-		found.append_array(_collect_meshes(child))
-	return found
