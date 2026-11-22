@@ -14,6 +14,7 @@ var touch_attack_pressed := false
 var animation_player: AnimationPlayer
 var animation_names: Dictionary = {}
 var current_motion := ""
+var attack_timer := 0.0
 
 func _ready() -> void:
 	animation_player = _find_animation_player(self)
@@ -45,7 +46,10 @@ func _physics_process(delta: float) -> void:
 	touch_jump_pressed = false
 	move_and_slide()
 
-	if not is_on_floor():
+	attack_timer = maxf(0.0, attack_timer - delta)
+	if attack_timer > 0.0 and animation_names.has("punch"):
+		_play_motion("punch")
+	elif not is_on_floor():
 		_play_motion("run_jump" if moving else "jump")
 	elif moving:
 		_play_motion("run" if running else "walk")
@@ -77,6 +81,10 @@ func _cache_hero_animations() -> void:
 			animation_names["run_jump"] = animation_name
 		elif key.contains("man_jump"):
 			animation_names["jump"] = animation_name
+		elif key.contains("punch") or key.contains("melee") or key.contains("attack"):
+			animation_names["punch"] = animation_name
+	if animation_names.has("punch"):
+		animation_player.get_animation(animation_names["punch"]).loop_mode = Animation.LOOP_NONE
 	for loop_key in ["idle", "walk", "run"]:
 		if animation_names.has(loop_key):
 			animation_player.get_animation(animation_names[loop_key]).loop_mode = Animation.LOOP_LINEAR
@@ -90,3 +98,9 @@ func _play_motion(motion: String) -> void:
 	current_motion = motion
 	animation_player.play(target, 0.16)
 	animation_player.speed_scale = 1.0 if motion in ["idle", "walk", "jump"] else 1.08
+
+func start_attack() -> void:
+	attack_timer = 0.48
+	if animation_names.has("punch"):
+		current_motion = ""
+		_play_motion("punch")
