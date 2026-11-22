@@ -213,6 +213,10 @@ var russian_voices: PackedStringArray = PackedStringArray()
 var dialogue_bag: Array = []
 var angry_bag: Array = []
 var dialogue_manager: Node
+var rival_target: Node3D
+var aggression := 0.0
+var rival_scan_timer := 0.0
+var step_height := 0.38
 
 func _ready() -> void:
 	add_to_group("fightable_npc")
@@ -237,6 +241,10 @@ func _ready() -> void:
 	collision_layer = 1
 	collision_mask = 1
 	safe_margin = 0.08
+	floor_snap_length = 0.32
+	floor_max_angle = deg_to_rad(52.0)
+	floor_stop_on_slope = true
+	aggression = randf_range(0.0, 1.0)
 	wander_dir = Vector3.RIGHT.rotated(Vector3.UP, randf() * TAU)
 	talk_cooldown = randf_range(2.0, 5.0)
 	if DisplayServer.has_feature(DisplayServer.FEATURE_TEXT_TO_SPEECH):
@@ -251,8 +259,34 @@ func _physics_process(delta: float) -> void:
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
 	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
+	rival_scan_timer = maxf(0.0, rival_scan_timer - delta)
+	if not is_instance_valid(rival_target) or rival_target.get("is_down"):
+		rival_target = null
+		if rival_scan_timer <= 0.0:
+			rival_scan_timer = randf_range(2.5, 5.5)
+			if aggression > 0.68:
+				_pick_rival()
 	var moving := false
-	if is_angry and is_instance_valid(player_ref):
+	if is_instance_valid(rival_target):
+		var rival_offset: Vector3 = rival_target.global_position - global_position
+		rival_offset.y = 0.0
+		var rival_distance := rival_offset.length()
+		if rival_distance > 1.35:
+			var rival_direction := rival_offset.normalized()
+			velocity.x = move_toward(velocity.x, rival_direction.x * personal_speed * 1.08, delta * 7.0)
+			velocity.z = move_toward(velocity.z, rival_direction.z * personal_speed * 1.08, delta * 7.0)
+			rotation.y = atan2(-rival_direction.x, -rival_direction.z)
+			_play_animation("walk")
+			moving = true
+		else:
+			velocity.x = move_toward(velocity.x, 0.0, delta * 12.0)
+			velocity.z = move_toward(velocity.z, 0.0, delta * 12.0)
+			_play_animation("attack")
+			if attack_cooldown <= 0.0:
+				attack_cooldown = randf_range(0.9, 1.45)
+				rival_target.call("take_hit", global_position, self)
+				_speak_random(ANGRY_LINES)
+	elif is_angry and is_instance_valid(player_ref):
 		var offset: Vector3 = player_ref.global_position - global_position
 		offset.y = 0.0
 		var distance := offset.length()
@@ -289,7 +323,8 @@ func _physics_process(delta: float) -> void:
 			_play_animation("idle")
 		_update_dialogue()
 	_apply_crowd_separation()
-	velocity.y = -0.3
+	_try_step_up(delta)
+	velocity.y = -0.3 if is_on_floor() else velocity.y - 22.0 * delta
 	move_and_slide()
 
 func _update_dialogue() -> void:
@@ -322,11 +357,33 @@ func _speak_random(lines: Array) -> void:
 	else:
 		DisplayServer.tts_speak(line, voice_id, rate, 1.0, pitch, get_instance_id(), true)
 
-func take_hit(from_position: Vector3) -> void:
+
+func _pick_rival() -> void:
+	var candidates := get_tree().get_nodes_in_group("fightable_npc")
+	var best: Node3D = null
+	var best_distance := 8.5
+	for candidate in candidates:
+		if candidate == self or not is_instance_valid(candidate) or candidate.get("is_down"):
+			continue
+		var distance := global_position.distance_to(candidate.global_position)
+		if distance < best_distance:
+			best = candidate
+			best_distance = distance
+	if best != null and randf() < 0.72:
+		rival_target = best
+		is_angry = false
+		_speak_random(ANGRY_LINES)
+
+func take_hit(from_position: Vector3, attacker: Node3D = null) -> void:
 	if is_down:
 		return
 	health -= 1
-	is_angry = true
+	if is_instance_valid(attacker) and attacker != self:
+		rival_target = attacker
+		is_angry = false
+	else:
+		is_angry = true
+		rival_target = null
 	talk_cooldown = 0.0
 	_speak_random(ANGRY_LINES)
 	var push := global_position - from_position
@@ -336,6 +393,7 @@ func take_hit(from_position: Vector3) -> void:
 	if health <= 0:
 		is_down = true
 		is_angry = false
+		rival_target = null
 		collision_layer = 0
 		collision_mask = 0
 		for child in get_children():
@@ -348,6 +406,24 @@ func take_hit(from_position: Vector3) -> void:
 			tween.tween_property(visual, "rotation:z", visual.rotation.z + deg_to_rad(82.0), 0.45)
 		get_tree().create_timer(respawn_delay).timeout.connect(_revive)
 
+
+func _try_step_up(delta: float) -> void:
+	if not is_on_floor():
+		return
+	var horizontal_motion := Vector3(velocity.x, 0.0, velocity.z) * delta
+	if horizontal_motion.length() < 0.015:
+		return
+	var hit := KinematicCollision3D.new()
+	if not test_move(global_transform, horizontal_motion, hit):
+		return
+	# Raise the capsule a small amount, then test whether the forward path is clear.
+	var raised := global_transform
+	raised.origin.y += step_height
+	if test_move(raised, horizontal_motion):
+		return
+	if test_move(raised, Vector3.DOWN * (step_height + 0.08)):
+		return
+	global_position.y += step_height
 
 func _try_hop(direction: Vector3) -> void:
 	if hop_cooldown > 0.0 or not is_on_floor() or direction.length() < 0.1:
@@ -373,6 +449,7 @@ func _revive() -> void:
 	health = 8
 	is_down = false
 	is_angry = false
+	rival_target = null
 	velocity = Vector3.ZERO
 	collision_layer = 1
 	collision_mask = 1
