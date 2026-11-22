@@ -319,11 +319,10 @@ var russian_voices: PackedStringArray = PackedStringArray()
 var personal_voice_id := ""
 var personal_voice_rate := 95
 var personal_voice_pitch := 1.0
-var conversation_cooldown := 0.0
 var dialogue_bag: Array = []
 var angry_bag: Array = []
-var poetic_bag: Array = []
 var conversation_cooldown := 0.0
+var in_conversation := false
 var in_conversation := false
 var dialogue_manager: Node
 var rival_target: Node3D
@@ -374,7 +373,6 @@ func _physics_process(delta: float) -> void:
 	if is_down:
 		return
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
-	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
 	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
 	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
@@ -448,65 +446,13 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _update_dialogue() -> void:
-	if is_down or is_angry or in_conversation:
-		return
-	_try_start_poetic_conversation()
-	if in_conversation:
+	if is_down or is_angry or in_conversation or conversation_cooldown > 0.0:
 		return
 	if not is_instance_valid(player_ref):
 		return
 	if global_position.distance_to(player_ref.global_position) < 7.0 and talk_cooldown <= 0.0:
 		_speak_random(DIALOGUE_LINES)
 		talk_cooldown = randf_range(10.0, 16.0)
-
-func _try_start_poetic_conversation() -> void:
-	if conversation_cooldown > 0.0 or not is_instance_valid(dialogue_manager):
-		return
-	var candidates := get_tree().get_nodes_in_group("fightable_npc")
-	var partner: Node3D = null
-	var nearest := 5.2
-	for candidate in candidates:
-		if candidate == self or not is_instance_valid(candidate):
-			continue
-		if candidate.get("is_down") or candidate.get("is_angry") or candidate.get("in_conversation"):
-			continue
-		if float(candidate.get("conversation_cooldown")) > 0.0:
-			continue
-		var distance := global_position.distance_to(candidate.global_position)
-		if distance < nearest:
-			nearest = distance
-			partner = candidate
-	if partner == null or randf() > 0.012:
-		return
-	in_conversation = true
-	partner.set("in_conversation", true)
-	conversation_cooldown = randf_range(42.0, 65.0)
-	partner.set("conversation_cooldown", randf_range(42.0, 65.0))
-	velocity.x = 0.0
-	velocity.z = 0.0
-	partner.set("velocity", Vector3.ZERO)
-	if poetic_bag.is_empty():
-		poetic_bag = POETIC_DIALOGUES.duplicate(true)
-		poetic_bag.shuffle()
-	var scene: Array = poetic_bag.pop_back()
-	for exchange in scene:
-		var line_speaker: String = String(exchange[0])
-		var line_text: String = String(exchange[1])
-		if line_speaker == "a":
-			_queue_speech(line_text)
-		elif partner.has_method("queue_poetic_line"):
-			partner.call("queue_poetic_line", line_text)
-	# Let the characters resume walking after the queued conversation has had time to play.
-	var release_time := 58.0
-	get_tree().create_timer(release_time).timeout.connect(func():
-		if is_instance_valid(self):
-			in_conversation = false
-		if is_instance_valid(partner):
-			partner.set("in_conversation", false)
-	)
-
-func queue_poetic_line(line: String) -> void:
-	_queue_speech(line)
 
 func _speak_random(lines: Array) -> void:
 	if lines.is_empty():
@@ -575,7 +521,17 @@ func _try_start_conversation() -> void:
 		})
 	conversation_cooldown = 55.0
 	partner.set("conversation_cooldown", 55.0)
+	in_conversation = true
+	partner.set("in_conversation", true)
+	velocity = Vector3.ZERO
+	partner.set("velocity", Vector3.ZERO)
 	dialogue_manager.call("queue_conversation", turns)
+	get_tree().create_timer(105.0).timeout.connect(func():
+		if is_instance_valid(self):
+			in_conversation = false
+		if is_instance_valid(partner):
+			partner.set("in_conversation", false)
+	)
 
 func _pick_rival() -> void:
 	var candidates := get_tree().get_nodes_in_group("fightable_npc")
