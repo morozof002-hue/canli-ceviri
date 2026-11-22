@@ -6,6 +6,7 @@ var player: CharacterBody3D
 var car: CharacterBody3D
 var hud: CanvasLayer
 var status_label: Label
+var health_label: Label
 var objective_label: Label
 var mission_marker: MeshInstance3D
 var in_car := false
@@ -42,6 +43,8 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("interact") or touch_interact_pressed:
 		touch_interact_pressed = false
 		_toggle_vehicle()
+	if is_instance_valid(health_label) and player != null:
+		health_label.text = "ЗДОРОВЬЕ: %d / 100" % int(player.get("health"))
 	if in_car:
 		status_label.text = "ЗА РУЛЁМ  •  E — ВЫЙТИ"
 	else:
@@ -293,6 +296,11 @@ func _build_hud() -> void:
 	objective_label.add_theme_font_size_override("font_size",15)
 	vb.add_child(objective_label)
 	status_label = Label.new()
+	health_label = Label.new()
+	health_label.name = "Health"
+	health_label.text = "ЗДОРОВЬЕ: 100 / 100"
+	health_label.add_theme_font_size_override("font_size", 17)
+	vb.add_child(health_label)
 	status_label.name = "Status"
 	status_label.text = "ПЕШКОМ  •  E — СЕСТЬ В МАШИНУ"
 	vb.add_child(status_label)
