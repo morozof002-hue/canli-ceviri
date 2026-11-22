@@ -50,6 +50,48 @@ const DIALOGUE_LINES := [
 	"Какого хрена ты так медленно плетёшься, приятель?"
 ]
 
+const SITUATION_LINES := {
+	"fight_witness": [
+		"Эй, вы двое! Хотите друг друга поубивать — хотя бы с тротуара уберитесь!",
+		"Вот это номер! Только вышел за хлебом, а тут уже бесплатный боксёрский вечер.",
+		"Да разнимите их кто-нибудь! Хотя нет, я лучше отсюда посмотрю.",
+		"Ставлю десять монет на того, что в синей рубашке!",
+		"Осторожнее! Вы сейчас витрину снесёте, придурки!",
+		"Полицию бы сюда… Хотя пока они доедут, тут уже спектакль закончится.",
+		"Ну и район! Даже спокойно пройти нельзя — обязательно кому-нибудь морду бьют."
+	],
+	"dead_witness": [
+		"Чёрт… Он что, совсем не шевелится? Надо держаться подальше.",
+		"Эй, кто-нибудь, вызовите помощь! Тут человеку плохо!",
+		"Вот до чего доводят понты и кулаки. Ужас.",
+		"Я этого не видел. Ничего не видел. Пойду отсюда.",
+		"Только бы он был жив… Кто-нибудь, помогите ему!"
+	],
+	"runner": [
+		"Эй, полегче! Ты тут пешеходов посшибаешь!",
+		"Куда летишь, чемпион?! Финишная черта не здесь!",
+		"Да притормози ты! Это улица, а не гоночная трасса!",
+		"С такой скоростью тебе бы не по тротуару, а на стадион.",
+		"Смотри под ноги, гонщик! Тут вообще-то люди ходят!"
+	],
+	"beach": [
+		"Море сегодня спокойное. Хоть что-то в этом городе не орёт и не ломается.",
+		"Вот бы весь день просидеть у воды, а не мотаться по этим делам.",
+		"Песок в обуви, солнце в глаза — зато настроение получше.",
+		"Кто опять оставил мусор на пляже? Совсем совесть потеряли?"
+	],
+	"boulevard": [
+		"На бульваре сегодня тесно. Все куда-то несутся, будто опаздывают на последний поезд.",
+		"Вечер, пальмы, неон… Не хватает только нормальной музыки из открытого окна.",
+		"Опять машины сигналят. У некоторых клаксон вместо мозгов."
+	],
+	"road": [
+		"На дороге осторожнее! Тут водители правила видели только на картинке.",
+		"Эти машины носятся так, будто тормоза им выдали отдельно за доплату.",
+		"Сначала пропусти транспорт, потом геройствуй. Целее будешь."
+	]
+}
+
 const POETIC_CONVERSATIONS := [
 	[
 		[0, "О сударь, отчего вы хмуритесь столь мрачно? Ужели солнце скрылось за тучей, или кошелёк ваш опустел прежде срока?"],
@@ -321,6 +363,8 @@ var personal_voice_rate := 95
 var personal_voice_pitch := 1.0
 var dialogue_bag: Array = []
 var angry_bag: Array = []
+var situation_bags: Dictionary = {}
+var situation_cooldown := 0.0
 var conversation_cooldown := 0.0
 var in_conversation := false
 var dialogue_manager: Node
@@ -372,6 +416,7 @@ func _physics_process(delta: float) -> void:
 	if is_down:
 		return
 	talk_cooldown = maxf(0.0, talk_cooldown - delta)
+	situation_cooldown = maxf(0.0, situation_cooldown - delta)
 	conversation_cooldown = maxf(0.0, conversation_cooldown - delta)
 	hop_cooldown = maxf(0.0, hop_cooldown - delta)
 	attack_cooldown = maxf(0.0, attack_cooldown - delta)
@@ -445,13 +490,57 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _update_dialogue() -> void:
-	if is_down or is_angry or in_conversation or conversation_cooldown > 0.0:
+	if is_down or is_angry or in_conversation or conversation_cooldown > 0.0 or situation_cooldown > 0.0:
 		return
 	if not is_instance_valid(player_ref):
 		return
-	if global_position.distance_to(player_ref.global_position) < 7.0 and talk_cooldown <= 0.0:
-		_speak_random(DIALOGUE_LINES)
-		talk_cooldown = randf_range(10.0, 16.0)
+	if global_position.distance_to(player_ref.global_position) >= 9.0 or talk_cooldown > 0.0:
+		return
+
+	# React to the most important nearby event first; ordinary chatter is only the fallback.
+	var nearby_fight := false
+	var nearby_body := false
+	for candidate in get_tree().get_nodes_in_group("fightable_npc"):
+		if candidate == self or not is_instance_valid(candidate):
+			continue
+		var distance := global_position.distance_to(candidate.global_position)
+		if distance > 11.0:
+			continue
+		if bool(candidate.get("is_down")):
+			nearby_body = true
+		elif is_instance_valid(candidate.get("rival_target")) or bool(candidate.get("is_angry")):
+			nearby_fight = true
+
+	if nearby_fight:
+		_speak_situation("fight_witness")
+	elif nearby_body:
+		_speak_situation("dead_witness")
+	else:
+		var player_speed := Vector2(player_ref.velocity.x, player_ref.velocity.z).length()
+		if player_speed > 6.2:
+			_speak_situation("runner")
+		elif global_position.z < -19.0 and global_position.z > -38.0:
+			_speak_situation("beach")
+		elif absf(global_position.z) < 9.0:
+			_speak_situation("boulevard")
+		elif global_position.z > 9.0 and global_position.z < 30.0:
+			_speak_situation("road")
+		else:
+			_speak_random(DIALOGUE_LINES)
+	talk_cooldown = randf_range(8.0, 13.0)
+
+func _speak_situation(key: String) -> void:
+	var lines: Array = SITUATION_LINES.get(key, [])
+	if lines.is_empty():
+		return
+	var bag: Array = situation_bags.get(key, [])
+	if bag.is_empty():
+		bag = lines.duplicate()
+		bag.shuffle()
+	situation_bags[key] = bag
+	_queue_speech(String(bag.pop_back()))
+	situation_bags[key] = bag
+	situation_cooldown = randf_range(5.0, 9.0)
 
 func _speak_random(lines: Array) -> void:
 	if lines.is_empty():
@@ -559,7 +648,11 @@ func take_hit(from_position: Vector3, attacker: Node3D = null) -> void:
 		is_angry = true
 		rival_target = null
 	talk_cooldown = 0.0
-	_speak_random(ANGRY_LINES)
+	if is_instance_valid(attacker):
+		_queue_speech("Эй! Не лезь к моему человеку, ублюдок!" if attacker != self else "Вот же псих! Сейчас ему отвечу!")
+	else:
+		_speak_random(ANGRY_LINES)
+	situation_cooldown = 0.0
 	var push := global_position - from_position
 	push.y = 0.0
 	if push.length() > 0.01:
