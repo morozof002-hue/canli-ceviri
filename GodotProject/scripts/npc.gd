@@ -421,8 +421,6 @@ func _try_step_up(delta: float) -> void:
 	raised.origin.y += step_height
 	if test_move(raised, horizontal_motion):
 		return
-	if test_move(raised, Vector3.DOWN * (step_height + 0.08)):
-		return
 	global_position.y += step_height
 
 func _try_hop(direction: Vector3) -> void:
