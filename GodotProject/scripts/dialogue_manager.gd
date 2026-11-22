@@ -15,8 +15,9 @@ func queue_line(speaker_id: int, line: String, voice_id: String, rate: int, pitc
 
 
 func queue_conversation(turns: Array[Dictionary]) -> void:
-	for turn in turns:
-		pending.append(turn)
+	# Finish the full two-person scene before resuming ambient chatter.
+	for index in range(turns.size() - 1, -1, -1):
+		pending.push_front(turns[index])
 
 func _process(_delta: float) -> void:
 	if pending.is_empty():
