@@ -1,91 +1,173 @@
 extends CharacterBody3D
 
+const HERO_SCENE = preload("res://assets/character/neon_coast_hero.glb")
+const DIALOGUE_LINES := [
+	"Отличный вечер, правда?",
+	"Говорят, на набережной сегодня вечеринка.",
+	"Эй, приятель! Не стой посреди дороги.",
+	"В этом городе ночью жизнь только начинается.",
+	"Знаешь, где здесь ближайший магазин?",
+	"Осторожнее на бульваре — водят как сумасшедшие.",
+	"Море сегодня просто шикарное.",
+	"Я ищу работу. Может, повезёт у порта.",
+	"Слышал музыку из клуба? Там жарко!",
+	"Не видел тут красную спортивную машину?"
+]
+
 var health := 3
 var wander_dir := Vector3.ZERO
 var wander_timer := 0.0
 var hit_flash := 0.0
+var stun_timer := 0.0
+var talk_cooldown := 0.0
 var body_material: StandardMaterial3D
+var animation_player: AnimationPlayer
+var animations: Dictionary = {}
+var current_animation := ""
+var visual: Node3D
+var speech: Label3D
+var player_ref: Node3D
+var is_down := false
 
 func _ready() -> void:
 	add_to_group("fightable_npc")
-	body_material = StandardMaterial3D.new()
-	body_material.albedo_color = Color(0.25, 0.55, 0.78)
-	body_material.roughness = 0.72
-	var shirt := MeshInstance3D.new()
-	var torso := CapsuleMesh.new()
-	torso.radius = 0.31
-	torso.height = 0.9
-	shirt.mesh = torso
-	shirt.position.y = 1.18
-	shirt.material_override = body_material
-	add_child(shirt)
-	var head := MeshInstance3D.new()
-	var head_mesh := SphereMesh.new()
-	head_mesh.radius = 0.23
-	head_mesh.height = 0.46
-	head.mesh = head_mesh
-	head.position.y = 1.88
-	head.material_override = _make_mat(Color(0.72, 0.49, 0.34))
-	add_child(head)
-	for side in [-1.0, 1.0]:
-		var leg := MeshInstance3D.new()
-		var leg_mesh := CapsuleMesh.new()
-		leg_mesh.radius = 0.12
-		leg_mesh.height = 0.78
-		leg.mesh = leg_mesh
-		leg.position = Vector3(side * 0.15, 0.48, 0)
-		leg.material_override = _make_mat(Color(0.12, 0.16, 0.23))
-		add_child(leg)
-		var arm := MeshInstance3D.new()
-		var arm_mesh := CapsuleMesh.new()
-		arm_mesh.radius = 0.095
-		arm_mesh.height = 0.72
-		arm.mesh = arm_mesh
-		arm.position = Vector3(side * 0.39, 1.22, 0)
-		arm.rotation.z = side * -0.12
-		arm.material_override = _make_mat(Color(0.72, 0.49, 0.34))
-		add_child(arm)
+	visual = HERO_SCENE.instantiate()
+	visual.name = "CivilianVisual"
+	visual.rotation.y = PI
+	visual.scale = Vector3.ONE * randf_range(0.88, 1.02)
+	add_child(visual)
+	animation_player = _find_animation_player(visual)
+	_cache_animations()
+	_play_animation("idle")
 	var collision := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.3
-	capsule.height = 1.85
+	capsule.radius = 0.32
+	capsule.height = 1.82
 	collision.shape = capsule
-	collision.position.y = 0.92
+	collision.position.y = 0.91
 	add_child(collision)
-	# Keep NPCs light on mobile: simple wander, no navigation mesh required.
+	speech = Label3D.new()
+	speech.name = "Speech"
+	speech.position.y = 2.55
+	speech.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	speech.font_size = 30
+	speech.outline_size = 8
+	speech.modulate = Color(1.0, 0.96, 0.78)
+	speech.text = ""
+	speech.visible = false
+	add_child(speech)
 	wander_dir = Vector3.RIGHT.rotated(Vector3.UP, randf() * TAU)
+	talk_cooldown = randf_range(1.0, 4.0)
+
+func set_player_reference(target: Node3D) -> void:
+	player_ref = target
 
 func _physics_process(delta: float) -> void:
-	wander_timer -= delta
-	if wander_timer <= 0.0:
-		wander_timer = randf_range(1.2, 3.5)
-		wander_dir = Vector3.RIGHT.rotated(Vector3.UP, randf() * TAU)
-	velocity.x = move_toward(velocity.x, wander_dir.x * 0.65, delta * 2.0)
-	velocity.z = move_toward(velocity.z, wander_dir.z * 0.65, delta * 2.0)
+	if is_down:
+		return
+	talk_cooldown = maxf(0.0, talk_cooldown - delta)
+	hit_flash = maxf(0.0, hit_flash - delta)
+	if stun_timer > 0.0:
+		stun_timer -= delta
+		velocity.x = move_toward(velocity.x, 0.0, delta * 3.0)
+		velocity.z = move_toward(velocity.z, 0.0, delta * 3.0)
+	else:
+		wander_timer -= delta
+		if wander_timer <= 0.0:
+			wander_timer = randf_range(1.8, 4.2)
+			wander_dir = Vector3.RIGHT.rotated(Vector3.UP, randf() * TAU)
+		velocity.x = move_toward(velocity.x, wander_dir.x * 0.8, delta * 2.2)
+		velocity.z = move_toward(velocity.z, wander_dir.z * 0.8, delta * 2.2)
 	velocity.y = -0.3
 	move_and_slide()
-	if Vector2(velocity.x, velocity.z).length() > 0.1:
+	if Vector2(velocity.x, velocity.z).length() > 0.12:
 		rotation.y = atan2(-velocity.x, -velocity.z)
-	if hit_flash > 0.0:
-		hit_flash -= delta
-		body_material.albedo_color = Color(1.0, 0.22, 0.16)
+		_play_animation("walk")
 	else:
-		body_material.albedo_color = Color(0.25, 0.55, 0.78)
+		_play_animation("idle")
+	if hit_flash > 0.0:
+		_set_visual_tint(Color(1.0, 0.35, 0.25))
+	else:
+		_set_visual_tint(Color.WHITE)
+	_update_dialogue()
+
+func _update_dialogue() -> void:
+	if not is_instance_valid(player_ref) or is_down:
+		speech.visible = false
+		return
+	var distance := global_position.distance_to(player_ref.global_position)
+	if distance < 5.5 and talk_cooldown <= 0.0:
+		speech.text = DIALOGUE_LINES[randi() % DIALOGUE_LINES.size()]
+		speech.visible = true
+		talk_cooldown = randf_range(7.0, 11.0)
+	elif distance >= 7.0:
+		speech.visible = false
 
 func take_hit(from_position: Vector3) -> void:
-	if health <= 0:
+	if health <= 0 or is_down:
 		return
 	health -= 1
-	hit_flash = 0.18
+	hit_flash = 0.28
+	stun_timer = 0.48
 	var push := global_position - from_position
 	push.y = 0.0
 	if push.length() > 0.01:
-		velocity += push.normalized() * 4.0
+		velocity = push.normalized() * 5.0
 	if health <= 0:
-		queue_free()
+		is_down = true
+		speech.visible = false
+		_play_animation("death")
+		collision_layer = 0
+		collision_mask = 0
+		velocity = Vector3.ZERO
+		var tween := create_tween()
+		tween.tween_property(visual, "rotation:x", visual.rotation.x + deg_to_rad(78.0), 0.28)
+		tween.tween_interval(1.8)
+		tween.tween_callback(queue_free)
 
-func _make_mat(color: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 0.8
-	return material
+func _find_animation_player(node: Node) -> AnimationPlayer:
+	if node is AnimationPlayer:
+		return node as AnimationPlayer
+	for child in node.get_children():
+		var found := _find_animation_player(child)
+		if found != null:
+			return found
+	return null
+
+func _cache_animations() -> void:
+	if animation_player == null:
+		return
+	for animation_name in animation_player.get_animation_list():
+		var key := String(animation_name).to_lower()
+		if key.contains("man_idle"):
+			animations["idle"] = animation_name
+		elif key.contains("man_walk"):
+			animations["walk"] = animation_name
+		elif key.contains("man_death") or key.contains("man_fall"):
+			animations["death"] = animation_name
+	for key in ["idle", "walk"]:
+		if animations.has(key):
+			animation_player.get_animation(animations[key]).loop_mode = Animation.LOOP_LINEAR
+
+func _play_animation(key: String) -> void:
+	if animation_player == null or not animations.has(key) or current_animation == key:
+		return
+	current_animation = key
+	animation_player.play(animations[key], 0.14)
+
+func _set_visual_tint(color: Color) -> void:
+	if visual == null:
+		return
+	for node in _collect_meshes(visual):
+		if hit_flash > 0.0:
+			node.modulate = color
+		else:
+			node.modulate = Color.WHITE
+
+func _collect_meshes(root: Node) -> Array:
+	var found: Array = []
+	for child in root.get_children():
+		if child is MeshInstance3D:
+			found.append(child)
+		found.append_array(_collect_meshes(child))
+	return found
