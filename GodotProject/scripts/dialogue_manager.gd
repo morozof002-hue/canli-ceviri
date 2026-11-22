@@ -13,6 +13,11 @@ func queue_line(speaker_id: int, line: String, voice_id: String, rate: int, pitc
 		"pitch": pitch
 	})
 
+
+func queue_conversation(turns: Array[Dictionary]) -> void:
+	for turn in turns:
+		pending.append(turn)
+
 func _process(_delta: float) -> void:
 	if pending.is_empty():
 		return
