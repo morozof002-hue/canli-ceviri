@@ -1,8 +1,0 @@
-NEON COAST — Character Asset Credits
-
-Main playable character:
-- Quaternius, Animated Men Pack — "Man" rigged humanoid model.
-- License: CC0 (public domain dedication).
-- Source pack: https://quaternius.com/packs/animatedmen.html
-- Original asset file was distributed in the public repository druboni/find-the-cat under assets/characters/person_a.glb; that repository's CREDITS.md identifies the character as Quaternius Animated Men Pack (CC0).
-- Model includes a humanoid skeleton and baked clips: idle, walk, run, jump, running jump, punch, sword slash, sitting, death and other actions.
