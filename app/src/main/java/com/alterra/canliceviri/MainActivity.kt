@@ -72,6 +72,15 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // One-time migration: make the first LINGUA AI launch ready for the China trip.
+        if (!prefs.getBoolean("lingua_ai_defaults_v1", false)) {
+            prefs.edit()
+                .putString("language_1", "ru")
+                .putString("language_2", "zh")
+                .putInt("control_mode", 1)
+                .putBoolean("lingua_ai_defaults_v1", true)
+                .apply()
+        }
         val savedSource = prefs.getString("language_1", "ru") ?: "ru"
         val savedTarget = prefs.getString("language_2", "zh") ?: "zh"
         val savedMode = prefs.getInt("control_mode", 1).coerceIn(0, 2)
