@@ -24,8 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -41,6 +42,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun LinguaApp() {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var source by remember { mutableStateOf("Русский") }
     var target by remember { mutableStateOf("中文") }
     var input by remember { mutableStateOf("") }
@@ -79,7 +81,7 @@ private fun LinguaApp() {
                 if (!modelReady) {
                     Button(onClick = {
                         busy = true; status = "Загрузка модели Whisper…"
-                        MainScope().launch {
+                        scope.launch {
                             try {
                                 withContext(Dispatchers.IO) { WhisperModel.download(context) { progress = it } }
                                 modelReady = true; status = "Whisper установлен. Распознавание работает офлайн."
@@ -90,24 +92,52 @@ private fun LinguaApp() {
                         Text(if (busy) "ЗАГРУЗКА $progress%" else "СКАЧАТЬ WHISPER · ~75 МБ")
                     }
                 } else {
-                    Box(Modifier.fillMaxWidth().height(64.dp).background(Green, RoundedCornerShape(18.dp)).pointerInput(modelPath, busy) {
+                    Box(Modifier.fillMaxWidth().height(64.dp).background(Green, RoundedCornerShape(18.dp)).pointerInput(modelPath) {
                         detectTapGestures(onPress = {
                             val allowed = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                            if (!allowed) permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            else if (!busy) {
+                            if (!allowed) {
+                                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            } else if (!busy) {
                                 val pcm = File(context.cacheDir, "lingua-recording.pcm")
+                                var started = false
                                 try {
-                                    recorder.start(pcm); status = "Слушаю… отпустите кнопку для распознавания."
-                                    tryAwaitRelease()
-                                    val recorded = recorder.stop()
-                                    if (recorded != null && recorded.length() > 2_000) {
-                                        busy = true; status = "Распознаю речь локально…"
-                                        val language = when (source) { "Русский" -> "ru"; "English" -> "en"; "Türkçe" -> "tr"; "中文" -> "zh"; else -> "auto" }
-                                        input = withContext(Dispatchers.IO) { NativeWhisper.transcribeNative(recorded.absolutePath, modelPath, language) }.trim()
-                                        status = if (input.isBlank()) "Речь не распознана. Попробуйте ещё раз." else "Речь распознана офлайн. Локальный переводчик подключается следующим этапом."
-                                        busy = false
-                                    } else status = "Запись слишком короткая. Удерживайте кнопку дольше."
-                                } catch (e: Exception) { recorder.stop(); busy = false; status = "Ошибка: ${e.message ?: "микрофон недоступен"}" }
+                                    recorder.start(pcm)
+                                    started = true
+                                    status = "Слушаю… отпустите кнопку для распознавания."
+                                    val released = tryAwaitRelease()
+                                    val recorded = withContext(NonCancellable + Dispatchers.IO) { recorder.stop() }
+                                    started = false
+                                    if (!released) {
+                                        status = "Запись прервана. Удерживайте кнопку и попробуйте ещё раз."
+                                    } else if (recorded != null && recorded.length() > 2_000) {
+                                        scope.launch {
+                                            busy = true
+                                            try {
+                                                status = "Распознаю речь локально…"
+                                                val language = when (source) { "Русский" -> "ru"; "English" -> "en"; "Türkçe" -> "tr"; "中文" -> "zh"; else -> "auto" }
+                                                val recognized = withContext(Dispatchers.IO) {
+                                                    NativeWhisper.transcribeNative(recorded.absolutePath, modelPath, language)
+                                                }.trim()
+                                                input = recognized
+                                                status = if (recognized.isBlank()) "Речь не распознана. Попробуйте ещё раз." else "Речь распознана офлайн. Локальный переводчик подключается следующим этапом."
+                                            } catch (e: Exception) {
+                                                status = "Ошибка распознавания: ${e.message ?: e.javaClass.simpleName}"
+                                            } finally {
+                                                busy = false
+                                            }
+                                        }
+                                    } else {
+                                        status = "Запись слишком короткая. Удерживайте кнопку дольше."
+                                    }
+                                } catch (e: CancellationException) {
+                                    if (started) withContext(NonCancellable + Dispatchers.IO) { recorder.stop() }
+                                    throw e
+                                } catch (e: Exception) {
+                                    if (started) {
+                                        try { withContext(NonCancellable + Dispatchers.IO) { recorder.stop() } } catch (_: Exception) { }
+                                    }
+                                    status = "Ошибка записи: ${e.message ?: e.javaClass.simpleName}"
+                                }
                             }
                         })
                     }, contentAlignment = Alignment.Center) {
