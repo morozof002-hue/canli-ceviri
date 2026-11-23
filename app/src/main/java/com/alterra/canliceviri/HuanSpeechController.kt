@@ -169,7 +169,7 @@ class HuanSpeechController(context: Context) {
                 if (recordingSamples.size < 4_000) error("Слишком короткая запись. Попробуйте ещё раз.")
                 val pcm = FloatArray(recordingSamples.size) { recordingSamples[it] / 32768f }
                 val first = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_1", "ru") ?: "ru"
-                val second = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_2", "tr") ?: "tr"
+                val second = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_2", "zh") ?: "zh"
                 val chosenLanguage = language ?: withContext(Dispatchers.Default) {
                     model.detectLanguage(pcm, listOf(first, second))?.best?.first
                 } ?: first
@@ -219,7 +219,7 @@ class HuanSpeechController(context: Context) {
 
     private fun targetFor(detected: String, selected: String?): String {
         val first = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_1", "ru") ?: "ru"
-        val second = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_2", "tr") ?: "tr"
+        val second = app.getSharedPreferences("huan_settings", Context.MODE_PRIVATE).getString("language_2", "zh") ?: "zh"
         return if (selected == null) {
             if (detected == first) second else first
         } else {
