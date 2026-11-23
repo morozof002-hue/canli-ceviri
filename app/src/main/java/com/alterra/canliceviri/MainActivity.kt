@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -44,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.awaitPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,8 +73,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val savedSource = prefs.getString("language_1", "ru") ?: "ru"
-        val savedTarget = prefs.getString("language_2", "tr") ?: "tr"
-        val savedMode = prefs.getInt("control_mode", 0).coerceIn(0, 2)
+        val savedTarget = prefs.getString("language_2", "zh") ?: "zh"
+        val savedMode = prefs.getInt("control_mode", 1).coerceIn(0, 2)
         val savedAutoDetect = prefs.getBoolean("auto_detect", true)
 
         setContent {
@@ -93,7 +94,7 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 HuanHome(
                     initialSource = coreLanguages.firstOrNull { it.code == savedSource } ?: coreLanguages[0],
-                    initialTarget = coreLanguages.firstOrNull { it.code == savedTarget } ?: coreLanguages[2],
+                    initialTarget = coreLanguages.firstOrNull { it.code == savedTarget } ?: coreLanguages[1],
                     initialMode = savedMode,
                     initialAutoDetect = savedAutoDetect,
                     speechState = speechState,
@@ -154,8 +155,8 @@ private fun HuanHome(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("HUAN", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF17233B))
-                    Text("ПЕРЕВОДЧИК", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 2.sp)
+                    Text("LINGUA AI", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF17233B))
+                    Text("УМНЫЙ ГОЛОСОВОЙ ПЕРЕВОДЧИК", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF667085), letterSpacing = 2.sp)
                 }
                 TextButton(onClick = { settingsOpen = true }) {
                     Text("⚙ Настройки", color = Color(0xFF344054))
@@ -163,7 +164,7 @@ private fun HuanHome(
             }
 
             Spacer(Modifier.height(24.dp))
-            Text("Выберите, кто говорит", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF17233B))
+            Text("Выберите язык и удерживайте кнопку", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF17233B))
             Spacer(Modifier.height(14.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
@@ -222,7 +223,7 @@ private fun HuanHome(
             Spacer(Modifier.height(10.dp))
             Text(
                 when (mode) {
-                    1 -> "Удерживайте кнопку, пока говорите"
+                    1 -> "Удерживайте во время речи · отпустите для перевода"
                     2 -> "Приложение само остановится после паузы"
                     else -> "Нажмите для начала и повторно для остановки"
                 },
@@ -315,10 +316,10 @@ private fun LanguageCard(
     val gestureModifier = if (mode == 1) {
         Modifier.pointerInput(language.code) {
             awaitEachGesture {
-                awaitFirstDown()
+                awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                 onPressStart()
                 try {
-                    waitForUpOrCancellation()
+                    while (awaitPointerEvent(PointerEventPass.Initial).changes.any { it.pressed }) { /* держим микрофон */ }
                 } finally {
                     onPressEnd()
                 }
@@ -339,7 +340,7 @@ private fun LanguageCard(
             Text(language.flag, fontSize = 34.sp)
             Spacer(Modifier.height(7.dp))
             Text(language.title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
-            Text(if (active) "СЛУШАЮ…" else if (mode == 1) "УДЕРЖИВАТЬ" else "НАЖАТЬ", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
+            Text(if (active) "СЛУШАЮ…" else if (mode == 1) "ДЕРЖАТЬ · ОТПУСТИТЬ ДЛЯ ПЕРЕВОДА" else "НАЖАТЬ", fontSize = 10.sp, color = Color.White.copy(alpha = 0.85f))
         }
     }
 }
