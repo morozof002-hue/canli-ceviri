@@ -3,6 +3,9 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
+
+val appVersionCode = providers.gradleProperty("VERSION_CODE").orElse("3").get().toInt()
+
 android {
     namespace = "ai.lingua.mobile"
     compileSdk = 35
@@ -10,8 +13,8 @@ android {
         applicationId = "ai.lingua.mobile"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = appVersionCode
+        versionName = "0.3.$appVersionCode"
         ndk { abiFilters += listOf("arm64-v8a") }
         externalNativeBuild { cmake { cppFlags += listOf("-std=c++17", "-O3") } }
     }
