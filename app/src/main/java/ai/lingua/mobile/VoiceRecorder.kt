@@ -11,6 +11,7 @@ class VoiceRecorder {
     @Volatile private var recording = false
     private var recorder: AudioRecord? = null
     private var worker: Thread? = null
+    private var outputFile: File? = null
 
     fun start(file: File) {
         check(!recording)
@@ -19,6 +20,7 @@ class VoiceRecorder {
         val audio = AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, 16_000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(minimum, 32_000))
         check(audio.state == AudioRecord.STATE_INITIALIZED) { "Не удалось открыть микрофон" }
         recorder = audio
+        outputFile = file
         recording = true
         audio.startRecording()
         worker = thread(name = "lingua-audio-capture") {
@@ -47,6 +49,6 @@ class VoiceRecorder {
         recorder?.release()
         recorder = null
         worker = null
-        return null
+        return outputFile.also { outputFile = null }
     }
 }
