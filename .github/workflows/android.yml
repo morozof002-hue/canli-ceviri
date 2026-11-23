@@ -22,9 +22,27 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build debug APK with native Whisper
-        run: gradle :app:assembleDebug
+      # Keep one debug signing key between builds so Android accepts in-place upgrades.
+      - name: Restore persistent app signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: lingua-ai-debug-signing-key-v1
+      - name: Create signing key on first build
+        run: |
+          mkdir -p ~/.android
+          if [ ! -f ~/.android/debug.keystore ]; then
+            keytool -genkeypair -v \
+              -keystore ~/.android/debug.keystore \
+              -storepass android \
+              -alias androiddebugkey \
+              -keypass android \
+              -dname "CN=LINGUA AI, OU=Android, O=LINGUA AI, L=Unknown, ST=Unknown, C=US" \
+              -keyalg RSA -keysize 2048 -validity 10000
+          fi
+      - name: Build signed APK with monotonic version code
+        run: gradle :app:assembleDebug -PVERSION_CODE=${{ github.run_number }}
       - uses: actions/upload-artifact@v4
         with:
-          name: LINGUA-AI-whisper-debug
+          name: LINGUA-AI-update-apk
           path: app/build/outputs/apk/debug/app-debug.apk
