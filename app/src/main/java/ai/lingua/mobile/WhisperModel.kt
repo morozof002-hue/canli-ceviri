@@ -7,15 +7,15 @@ import java.net.URL
 
 object WhisperModel {
     private const val MODEL_URL =
-        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin"
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin"
 
-    fun modelFile(context: Context) = File(context.filesDir, "ggml-tiny.bin")
+    fun modelFile(context: Context) = File(context.filesDir, "ggml-large-v3-turbo-q5_0.bin")
 
-    fun isInstalled(context: Context) = modelFile(context).length() > 1_000_000L
+    fun isInstalled(context: Context) = modelFile(context).length() > 500L * 1024L * 1024L
 
     fun download(context: Context, onProgress: (Int) -> Unit): File {
         val destination = modelFile(context)
-        val temporary = File(context.filesDir, "ggml-tiny.bin.part")
+        val temporary = File(context.filesDir, "ggml-large-v3-turbo-q5_0.bin.part")
         val connection = (URL(MODEL_URL).openConnection() as HttpURLConnection).apply {
             connectTimeout = 20_000
             readTimeout = 60_000
@@ -40,7 +40,7 @@ object WhisperModel {
                     }
                 }
             }
-            check(temporary.length() > 1_000_000L) { "Файл модели слишком маленький или повреждён." }
+            check(temporary.length() > 500L * 1024L * 1024L) { "Файл модели слишком маленький или повреждён." }
             if (destination.exists()) destination.delete()
             check(temporary.renameTo(destination)) { "Не удалось сохранить модель Whisper." }
             return destination
