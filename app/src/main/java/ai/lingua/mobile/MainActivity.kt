@@ -47,7 +47,7 @@ private fun LinguaApp() {
     var target by remember { mutableStateOf("中文") }
     var input by remember { mutableStateOf("") }
     var output by remember { mutableStateOf("Здесь появится перевод.") }
-    var status by remember { mutableStateOf("Скачайте Whisper Large V3 Q5_0 один раз (около 1,1 ГБ).") }
+    var status by remember { mutableStateOf("Скачайте Whisper Large V3 Turbo Q5_0 один раз (около 575 МБ).") }
     var modelReady by remember { mutableStateOf(WhisperModel.isInstalled(context)) }
     var busy by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
@@ -62,7 +62,7 @@ private fun LinguaApp() {
             Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 22.dp), verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Column {
                     Text("LINGUA AI", fontSize = 30.sp, fontWeight = FontWeight.Black, color = Green)
-                    Text("Локальное распознавание речи • Large V3 Q5_0", fontSize = 13.sp, color = Ink.copy(alpha = .6f))
+                    Text("Локальное распознавание речи • Large V3 Turbo Q5_0", fontSize = 13.sp, color = Ink.copy(alpha = .6f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     LanguageChip(source, Modifier.weight(1f)) { source = target.also { target = source } }
@@ -80,16 +80,16 @@ private fun LinguaApp() {
                 }
                 if (!modelReady) {
                     Button(onClick = {
-                        busy = true; status = "Загрузка модели Whisper…"
+                        busy = true; status = "Загрузка Whisper Large V3 Turbo…"
                         scope.launch {
                             try {
                                 withContext(Dispatchers.IO) { WhisperModel.download(context) { progress = it } }
-                                modelReady = true; status = "Whisper установлен. Распознавание работает офлайн."
+                                modelReady = true; status = "Whisper Turbo установлен. Распознавание работает офлайн."
                             } catch (e: Exception) { status = "Ошибка загрузки: ${e.message ?: "неизвестно"}" }
                             finally { busy = false }
                         }
                     }, enabled = !busy, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp)) {
-                        Text(if (busy) "ЗАГРУЗКА $progress%" else "СКАЧАТЬ WHISPER LARGE V3 Q5_0 · ~1,1 ГБ")
+                        Text(if (busy) "ЗАГРУЗКА $progress%" else "СКАЧАТЬ WHISPER TURBO Q5_0 · ~575 МБ")
                     }
                 } else {
                     Box(Modifier.fillMaxWidth().height(64.dp).background(Green, RoundedCornerShape(18.dp)).pointerInput(modelPath) {
@@ -113,7 +113,7 @@ private fun LinguaApp() {
                                         scope.launch {
                                             busy = true
                                             try {
-                                                status = "Распознаю речь локально…"
+                                                status = "Распознаю речь на Large V3 Turbo…"
                                                 val language = when (source) { "Русский" -> "ru"; "English" -> "en"; "Türkçe" -> "tr"; "中文" -> "zh"; else -> "auto" }
                                                 val recognized = withContext(Dispatchers.IO) {
                                                     NativeWhisper.transcribeNative(recorded.absolutePath, modelPath, language)
@@ -145,7 +145,7 @@ private fun LinguaApp() {
                     }
                 }
                 Text(status, fontSize = 12.sp, color = Ink.copy(alpha = .65f), modifier = Modifier.align(Alignment.CenterHorizontally))
-                Text("WHISPER LARGE V3 Q5_0 • OFFLINE • БЕЗ РЕКЛАМЫ", fontSize = 10.sp, color = Green, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
+                Text("WHISPER LARGE V3 TURBO Q5_0 • OFFLINE • БЕЗ РЕКЛАМЫ", fontSize = 10.sp, color = Green, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     }
